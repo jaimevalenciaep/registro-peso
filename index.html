@@ -4,57 +4,40 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Registro de Peso (kg)</title>
+
+  <!-- CSS externo -->
+  <link rel="stylesheet" href="./assets/css/styles.css">
+
+  <!-- Evita 404 de favicon si no tienes uno subido -->
   <link rel="icon" href="data:,">
-  <style>
-    :root { --bg:#0b1020; --card:#141b34; --muted:#8ea0b6; --text:#eaf0ff; --accent:#7aa2ff; --danger:#ff6b6b; --ok:#47d16f; }
-    *{box-sizing:border-box}
-    body{margin:0;background:linear-gradient(180deg,var(--bg),#0e1530);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,"Helvetica Neue",Arial;}
-    .wrap{max-width:720px;margin:40px auto;padding:0 16px}
-    .card{background:var(--card);border:1px solid rgba(255,255,255,.08);border-radius:16px;box-shadow:0 10px 30px rgba(0,0,0,.35)}
-    header{padding:20px 20px 0}
-    header h1{margin:0;font-size:1.35rem}
-    header p{margin:.25rem 0 1rem;color:var(--muted)}
-    .content{padding:20px}
-    label{display:block;margin:.25rem 0 .35rem}
-    input[type="text"],input[type="password"],input[type="number"]{
-      width:100%;padding:12px 14px;border-radius:12px;border:1px solid rgba(255,255,255,.12);
-      background:#0c1330;color:var(--text);font-size:1rem;outline:none;
-    }
-    input[type="number"]::-webkit-outer-spin-button,input[type="number"]::-webkit-inner-spin-button{ -webkit-appearance:none; margin:0 }
-    .row{display:grid;grid-template-columns:1fr auto;gap:12px;align-items:end}
-    button{
-      cursor:pointer;border:1px solid rgba(255,255,255,.12);padding:12px 16px;border-radius:12px;
-      background:var(--accent);color:#0b1020;font-weight:600
-    }
-    button[disabled]{opacity:.6;cursor:not-allowed}
-    .muted{color:var(--muted)} .ok{color:var(--ok)} .err{color:var(--danger)}
-    table{width:100%;border-collapse:collapse;margin-top:16px;background:#0c1330;border-radius:12px;overflow:hidden}
-    th,td{padding:12px;border-bottom:1px solid rgba(255,255,255,.06);text-align:left; vertical-align:middle}
-    th{font-weight:600;color:#c9d7ff;background:#0f1740}
-    tr:last-child td{border-bottom:none}
-    .actions{display:flex;gap:8px;align-items:center;justify-content:space-between;margin-top:12px}
-    .pill{padding:6px 10px;border-radius:999px;background:#0f1740;border:1px solid rgba(255,255,255,.1);font-size:.9rem}
-    .center{display:flex;justify-content:center;align-items:center;gap:8px}
-    .hide{display:none}
-    .footer{padding:0 20px 20px}
-    .btn-del{background:#2b3258;border-color:#444;color:#ffb3b3}
-    .btn-del:hover{filter:brightness(1.1)}
-    .btn-small{padding:8px 10px;font-size:.9rem;border-radius:10px}
-    .login-backdrop{ position:fixed;inset:0;background:rgba(0,0,0,.5);backdrop-filter: blur(3px);display:flex;align-items:center;justify-content:center;padding:16px }
-    .login{width:100%;max-width:420px}
-  </style>
+
+  <!-- (Opcional) Pre-carga del logo para que aparezca instantáneo -->
+  <link rel="preload" as="image" href="./assets/img/logo-principal-encabezado-web-invertido.png" />
 </head>
 <body>
   <div class="wrap">
     <div class="card">
-      <header>
-        <h1>Registro diario de peso</h1>
+      <!-- CABECERA CON LOGO COMO TÍTULO -->
+      <header class="brand-header">
+        <img
+          src="./assets/img/logo-principal-encabezado-web-invertido.png"
+          alt="Registro diario de peso — Tu marca"
+          class="brand-logo"
+          loading="eager"
+          decoding="async"
+        />
+        <!-- H1 oculto para accesibilidad y SEO -->
+        <h1 class="sr-only">Registro diario de peso</h1>
+
         <p class="muted">Introduce tu peso en <strong>kg</strong>. La fecha se guarda automáticamente (dd/mm/yyyy).</p>
       </header>
+
       <div class="content">
         <div class="actions">
           <span id="today" class="pill">Hoy: —/—/—</span>
-          <div class="center"><button id="logoutBtn" class="hide" title="Cerrar sesión">Cerrar sesión</button></div>
+          <div class="center">
+            <button id="logoutBtn" class="hide" title="Cerrar sesión">Cerrar sesión</button>
+          </div>
         </div>
 
         <div class="row" style="margin-top:14px">
@@ -63,29 +46,46 @@
             <input id="peso" type="number" inputmode="decimal" step="0.1" min="20" max="400" placeholder="Ej: 72.4" autocomplete="off" />
             <small class="muted">Usa punto o coma para decimales.</small>
           </div>
-          <div><button id="addBtn">Registrar</button></div>
+          <div>
+            <button id="addBtn">Registrar</button>
+          </div>
         </div>
 
         <p id="status" class="muted" aria-live="polite" style="margin:12px 0 0"></p>
 
         <table id="histTable" class="hide" aria-label="Histórico de pesos">
-          <thead><tr><th>Fecha (dd/mm/yyyy)</th><th>Peso (kg)</th><th>Acciones</th></tr></thead>
+          <thead>
+            <tr>
+              <th>Fecha (dd/mm/yyyy)</th>
+              <th>Peso (kg)</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
           <tbody id="histBody"></tbody>
         </table>
       </div>
-      <div class="footer"><p class="muted" style="margin:0.75rem 0 0">Tus datos se envían de forma segura al registro de tu nutricionista.</p></div>
+
+      <div class="footer">
+        <p class="muted" style="margin:0.75rem 0 0">Tus datos se envían de forma segura al registro de tu nutricionista.</p>
+      </div>
     </div>
   </div>
 
-  <!-- Modal de acceso con FORM -->
+  <!-- Modal de acceso con FORM (soporta Enter) -->
   <div class="login-backdrop" id="loginModal" role="dialog" aria-modal="true" aria-labelledby="loginTitle">
     <div class="card login">
       <div class="content">
         <h2 id="loginTitle" style="margin-top:0">Accede a tu registro</h2>
         <p class="muted" style="margin-top:0">Introduce tu <strong>id de usuario</strong> y tu <strong>token</strong>.</p>
         <form id="loginForm" style="display:grid;gap:12px">
-          <div><label for="userId">ID de usuario</label><input id="userId" name="userId" type="text" placeholder="Ej: ana" autocomplete="username" required /></div>
-          <div><label for="token">Token</label><input id="token" name="token" type="password" placeholder="Tu token personal" autocomplete="current-password" required /></div>
+          <div>
+            <label for="userId">ID de usuario</label>
+            <input id="userId" name="userId" type="text" placeholder="Ej: ana" autocomplete="username" required />
+          </div>
+          <div>
+            <label for="token">Token</label>
+            <input id="token" name="token" type="password" placeholder="Tu token personal" autocomplete="current-password" required />
+          </div>
           <button id="loginBtn" type="submit">Entrar</button>
           <small class="muted">También puedes abrir con <code>?userId=ana&token=TU_TOKEN</code>.</small>
         </form>
@@ -93,11 +93,12 @@
     </div>
   </div>
 
+  <!-- ===================== JS ===================== -->
   <script>
     // ========= CONFIG =========
-    // ⚠️ Pega aquí la URL /exec del deployment VIGENTE
-    const APP_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxKdPLwPSupjMsZDh2r53_jHcZWWY1_FYDHWaAUrih1zYlOqTGvigSeZCB8YzwX_ciT/exec";
-    const DATE_LOCALE = "es-ES"; const TZ = "Europe/Madrid";
+    const APP_SCRIPT_URL = "PASTE_YOUR_/exec_URL_HERE"; // ← pega aquí tu URL /exec vigente
+    const DATE_LOCALE = "es-ES"; 
+    const TZ = "Europe/Madrid";
 
     // ========= Utils =========
     const el = id => document.getElementById(id);
@@ -105,13 +106,15 @@
     const show = (node, v=true) => node && node.classList.toggle("hide", !v);
     const fmtDate = d => new Date(d).toLocaleDateString(DATE_LOCALE, {day:'2-digit',month:'2-digit',year:'numeric', timeZone:TZ});
     const normalize = v => { const n=Number(String(v||"").trim().replace(",",".")); return Number.isFinite(n)?n:null; };
+
     const setCreds = ({userId, token}) => { localStorage.setItem("userId", userId); localStorage.setItem("token", token); };
     const getCreds = () => ({ userId: localStorage.getItem("userId"), token: localStorage.getItem("token") });
     const clearCreds = () => { localStorage.removeItem("userId"); localStorage.removeItem("token"); };
+
     function renderToday(){ el("today").textContent = "Hoy: " + fmtDate(Date.now()); }
     function renderStatus(msg, cls="muted"){ el("status").textContent = msg; el("status").className = cls; }
 
-    // ========= Parse robusto =========
+    // ========= Parse robusto (por si algún deployment devuelve data=...) =========
     async function parseJSONResponse(res){
       const txt = await res.text();
       try { return JSON.parse(txt); } catch {}
@@ -143,7 +146,7 @@
       return parseJSONResponse(res);
     }
 
-    // ❌ Eliminar registro
+    // ❌ Eliminar registro (por fila real de la hoja)
     async function apiDelete(userId, token, row){
       if (!okURL(APP_SCRIPT_URL)) throw new Error("Configura APP_SCRIPT_URL (debe acabar en /exec).");
       const body = new URLSearchParams({ data: JSON.stringify({ action:"delete", userId, token, row }) });
