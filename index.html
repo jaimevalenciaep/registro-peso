@@ -1,291 +1,149 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Registro de Peso (kg)</title>
-  <link rel="icon" href="data:,">
-  <style>
-    :root { --bg:#0b1020; --card:#141b34; --muted:#8ea0b6; --text:#eaf0ff; --accent:#7aa2ff; --danger:#ff6b6b; --ok:#47d16f; }
-    *{box-sizing:border-box}
-    body{margin:0;background:linear-gradient(180deg,var(--bg),#0e1530);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,"Helvetica Neue",Arial;}
-    .wrap{max-width:720px;margin:40px auto;padding:0 16px}
-    .card{background:var(--card);border:1px solid rgba(255,255,255,.08);border-radius:16px;box-shadow:0 10px 30px rgba(0,0,0,.35)}
-    header{padding:20px 20px 0}
-    header h1{margin:0;font-size:1.35rem}
-    header p{margin:.25rem 0 1rem;color:var(--muted)}
-    .content{padding:20px}
-    label{display:block;margin:.25rem 0 .35rem}
-    input[type="text"],input[type="password"],input[type="number"]{
-      width:100%;padding:12px 14px;border-radius:12px;border:1px solid rgba(255,255,255,.12);
-      background:#0c1330;color:var(--text);font-size:1rem;outline:none;
-    }
-    input[type="number"]::-webkit-outer-spin-button,input[type="number"]::-webkit-inner-spin-button{ -webkit-appearance:none; margin:0 }
-    .row{display:grid;grid-template-columns:1fr auto;gap:12px;align-items:end}
-    button{
-      cursor:pointer;border:1px solid rgba(255,255,255,.12);padding:12px 16px;border-radius:12px;
-      background:var(--accent);color:#0b1020;font-weight:600
-    }
-    button[disabled]{opacity:.6;cursor:not-allowed}
-    .muted{color:var(--muted)} .ok{color:var(--ok)} .err{color:var(--danger)}
-    table{width:100%;border-collapse:collapse;margin-top:16px;background:#0c1330;border-radius:12px;overflow:hidden}
-    th,td{padding:12px;border-bottom:1px solid rgba(255,255,255,.06);text-align:left}
-    th{font-weight:600;color:#c9d7ff;background:#0f1740}
-    tr:last-child td{border-bottom:none}
-    .actions{display:flex;gap:8px;align-items:center;justify-content:space-between;margin-top:12px}
-    .pill{padding:6px 10px;border-radius:999px;background:#0f1740;border:1px solid rgba(255,255,255,.1);font-size:.9rem}
-    .center{display:flex;justify-content:center;align-items:center;gap:8px}
-    .hide{display:none}
-    .footer{padding:0 20px 20px}
-    .login-backdrop{
-      position:fixed;inset:0;background:rgba(0,0,0,.5);backdrop-filter: blur(3px);
-      display:flex;align-items:center;justify-content:center;padding:16px
-    }
-    .login{width:100%;max-width:420px}
-  </style>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Registro de peso (mínimo)</title>
+<link rel="icon" href="data:,">
 </head>
 <body>
-  <div class="wrap">
-    <div class="card">
-      <header>
-        <h1>Registro diario de peso</h1>
-        <p class="muted">Introduce tu peso en <strong>kg</strong>. La fecha se guarda automáticamente (dd/mm/yyyy).</p>
-      </header>
-      <div class="content">
-        <div class="actions">
-          <span id="today" class="pill">Hoy: —/—/—</span>
-          <div class="center">
-            <button id="logoutBtn" class="hide" title="Cerrar sesión">Cerrar sesión</button>
-          </div>
-        </div>
+<h1>Registro de peso (mínimo)</h1>
 
-        <div class="row" style="margin-top:14px">
-          <div>
-            <label for="peso">Peso (kg)</label>
-            <input id="peso" type="number" inputmode="decimal" step="0.1" min="20" max="400" placeholder="Ej: 72.4" autocomplete="off" />
-            <small class="muted">Usa punto o coma para decimales.</small>
-          </div>
-          <div>
-            <button id="addBtn">Registrar</button>
-          </div>
-        </div>
+<!-- LOGIN -->
+<section id="loginSec">
+  <h2>Accede</h2>
+  <form id="loginForm">
+    <label>ID de usuario <input id="userId" required></label>
+    <label>Token <input id="token" type="password" required></label>
+    <button type="submit">Entrar</button>
+  </form>
+  <p>También puedes entrar con la URL: <code>?userId=ana&token=ABC</code></p>
+</section>
 
-        <p id="status" class="muted" aria-live="polite" style="margin:12px 0 0"></p>
+<!-- APP -->
+<section id="appSec" style="display:none">
+  <p>
+    <button id="logoutBtn">Cerrar sesión</button>
+  </p>
+  <h2>Nuevo registro</h2>
+  <label>Peso (kg) <input id="peso" type="number" step="0.1" min="20" max="400" inputmode="decimal"></label>
+  <button id="addBtn">Registrar</button>
 
-        <table id="histTable" class="hide" aria-label="Histórico de pesos">
-          <thead><tr><th>Fecha (dd/mm/yyyy)</th><th>Peso (kg)</th></tr></thead>
-          <tbody id="histBody"></tbody>
-        </table>
-      </div>
-      <div class="footer">
-        <p class="muted" style="margin:0.75rem 0 0">Tus datos se envían de forma segura al registro de tu nutricionista.</p>
-      </div>
-    </div>
-  </div>
+  <h2>Histórico</h2>
+  <table border="1" cellpadding="6">
+    <thead><tr><th>Fecha (dd/mm/yyyy)</th><th>Peso (kg)</th></tr></thead>
+    <tbody id="histBody"></tbody>
+  </table>
+</section>
 
-  <!-- Modal de acceso con FORM -->
-  <div class="login-backdrop" id="loginModal" role="dialog" aria-modal="true" aria-labelledby="loginTitle">
-    <div class="card login">
-      <div class="content">
-        <h2 id="loginTitle" style="margin-top:0">Accede a tu registro</h2>
-        <p class="muted" style="margin-top:0">Introduce tu <strong>id de usuario</strong> y tu <strong>token</strong>.</p>
-        <form id="loginForm" style="display:grid;gap:12px">
-          <div>
-            <label for="userId">ID de usuario</label>
-            <input id="userId" name="userId" type="text" placeholder="Ej: ana" autocomplete="username" required />
-          </div>
-          <div>
-            <label for="token">Token</label>
-            <input id="token" name="token" type="password" placeholder="Tu token personal" autocomplete="current-password" required />
-          </div>
-          <button id="loginBtn" type="submit">Entrar</button>
-          <small class="muted">También puedes abrir la página con <code>?userId=ana&token=TU_TOKEN</code> para autocompletar.</small>
-        </form>
-      </div>
-    </div>
-  </div>
+<hr>
+<pre id="status" style="white-space:pre-wrap;background:#f5f5f5;padding:8px;border:1px solid #ddd"></pre>
 
-  <script>
-/* HIDE_MODAL_V2 — script robusto para login + cierre del modal */
-(() => {
-  // ======= 🔧 CONFIG (CAMBIA ESTO) =======
-  const APP_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbw2gm7eFC6ubXG1Wzbhtjbu_jX-9SoJh7sSNRbj_7SKSLc-aJfqUEO1cHrKsLBd4CxO-Q/exec"; // ej: https://script.google.com/macros/s/XXXX/exec
-  const DATE_LOCALE = "es-ES";
-  const TZ = "Europe/Madrid";
+<script>
+const APP_SCRIPT_URL = "YOUR_WEB_APP_URL_HERE"; // <-- pon aquí tu /exec
 
-  // Si quieres comprobar que el modal se cierra aunque no tengas backend, pon true:
-  const TEST_MODE = false; // true = no llama al backend; solo cierra modal y pinta simulado.
+// Utilidades
+const $ = id => document.getElementById(id);
+const show = (el, v) => el.style.display = v ? '' : 'none';
+const okURL = u => /^https?:\/\/.+\/exec(\b|$)/.test(u || "");
+const fmtES = d => new Date(d).toLocaleDateString("es-ES",{day:'2-digit',month:'2-digit',year:'numeric', timeZone:'Europe/Madrid'});
+const setCreds = (u,t)=>{localStorage.setItem('userId',u);localStorage.setItem('token',t);}
+const getCreds = ()=>({userId:localStorage.getItem('userId'),token:localStorage.getItem('token')});
+const clearCreds = ()=>{localStorage.removeItem('userId');localStorage.removeItem('token');}
 
-  // ======= 🧩 Utils =======
-  const el = id => document.getElementById(id);
-  const isURLOk = u => typeof u === "string" && /^https?:\/\/.+\/exec(\b|$)/.test(u || "");
-  const show = (node, visible=true) => node && node.classList.toggle("hide", !visible);
-
-  function hideModalHard() {
-    const m = el("loginModal");
-    if (!m) return;
-    m.classList.add("hide");
-    m.style.display = "none";
-    m.setAttribute("aria-hidden", "true");
-  }
-  function showModalHard() {
-    const m = el("loginModal");
-    if (!m) return;
-    m.classList.remove("hide");
-    m.style.display = "flex";
-    m.removeAttribute("aria-hidden");
-  }
-
-  const fmtDate = d => new Date(d).toLocaleDateString(DATE_LOCALE,{day:'2-digit',month:'2-digit',year:'numeric',timeZone:TZ});
-  const normalizeWeight = v => {
-    if (v==null) return null;
-    const n = Number(String(v).trim().replace(",", "."));
-    return Number.isFinite(n) ? n : null;
-  };
-
-  const getCreds = () => ({ userId: localStorage.getItem("userId"), token: localStorage.getItem("token") });
-  const setCreds = ({userId, token}) => { localStorage.setItem("userId", userId); localStorage.setItem("token", token); };
-  const clearCreds = () => { localStorage.removeItem("userId"); localStorage.removeItem("token"); };
-
-  function renderStatus(msg, cls="muted"){ const s = el("status"); if (s){ s.textContent = msg; s.className = cls; } }
-  function renderToday(){ const t = el("today"); if (t){ t.textContent = "Hoy: " + fmtDate(Date.now()); } }
-  function renderTable(rows){
-    const body = el("histBody"); if (!body) return;
-    body.innerHTML = "";
-    rows.forEach(r => {
-      const tr = document.createElement("tr");
-      tr.innerHTML = `<td>${r.date}</td><td>${r.weight}</td>`;
-      body.appendChild(tr);
-    });
-    show(el("histTable"), rows.length>0);
-  }
-
-  // ======= 🌐 API =======
-  async function apiList(userId, token, limit=180){
-    if (TEST_MODE) return { ok:true, items: [{date: fmtDate(Date.now()), weight: 70.0}] };
-    if (!isURLOk(APP_SCRIPT_URL)) throw new Error("Falta configurar APP_SCRIPT_URL (termina en /exec).");
-    const url = new URL(APP_SCRIPT_URL);
-    url.searchParams.set("action","list");
-    url.searchParams.set("userId", userId);
-    url.searchParams.set("token", token);
-    url.searchParams.set("limit", String(limit));
-    const res = await fetch(url.toString());
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    return res.json();
-  }
-
-  async function apiAdd(userId, token, weight){
-    if (TEST_MODE) return { ok:true, entry:{ date: fmtDate(Date.now()), weight } };
-    if (!isURLOk(APP_SCRIPT_URL)) throw new Error("Falta configurar APP_SCRIPT_URL (termina en /exec).");
-    const res = await fetch(APP_SCRIPT_URL, {
-      method: "POST",
-      headers: { "Content-Type":"application/json" },
-      body: JSON.stringify({ action:"add", userId, token, weight })
-    });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    return res.json();
-  }
-
-  // ======= 🚪 Auth/UI =======
-  function syncCredsFromQuery(){
-    const url = new URL(location.href);
-    const u = url.searchParams.get("userId");
-    const t = url.searchParams.get("token");
-    if (u && t){ setCreds({ userId:u, token:t }); }
-  }
-
-  async function updateAuthUI(){
-    const { userId, token } = getCreds();
-    const logged = !!(userId && token);
-
-    if (logged) {
-      // Cierra el modal **antes** de llamar al backend
-      hideModalHard();
-      show(el("logoutBtn"), true);
-      renderStatus("Cargando histórico…");
-
-      try {
-        const data = await apiList(userId, token);
-        if (data.ok){
-          renderTable(data.items || []);
-          renderStatus(`Histórico cargado (${(data.items||[]).length}).`);
-        } else {
-          renderStatus(data.error || "No se pudo cargar el histórico.", "err");
-        }
-      } catch (e){
-        renderStatus(e.message || "Error al cargar histórico.", "err");
-      }
-    } else {
-      showModalHard();
-      show(el("logoutBtn"), false);
-    }
-  }
-
-  async function handleAdd(){
-    const { userId, token } = getCreds();
-    if (!userId || !token){ renderStatus("Primero inicia sesión.", "err"); showModalHard(); return; }
-    const w = normalizeWeight(el("peso").value);
-    if (w==null || w<20 || w>400){ renderStatus("Introduce un peso válido (20–400 kg).", "err"); el("peso").focus(); return; }
-    el("addBtn").disabled = true; renderStatus("Guardando…");
-    try {
-      const data = await apiAdd(userId, token, w);
-      if (data.ok){ renderStatus("Registro guardado.", "ok"); el("peso").value=""; await updateAuthUI(); }
-      else { renderStatus(data.error || "No se pudo guardar.", "err"); }
-    } catch(e){ renderStatus(e.message || "Error de red/servidor.", "err"); }
-    finally { el("addBtn").disabled = false; }
-  }
-
-  // ======= 🎛️ Init & eventos =======
-  function init(){
-    renderToday();
-    syncCredsFromQuery();
-    updateAuthUI();
-
-    // Login (form submit: Enter o botón)
-    el("loginForm")?.addEventListener("submit", (ev) => {
-      ev.preventDefault();
-      const userId = el("userId")?.value?.trim();
-      const token  = el("token")?.value?.trim();
-      if (!userId || !token){ renderStatus("Completa ID y token.", "err"); return; }
-      setCreds({ userId, token });
-      hideModalHard();                 // ← cierra SIEMPRE el modal
-      show(el("logoutBtn"), true);
-      renderStatus("Sesión iniciada. Cargando histórico…");
-      updateAuthUI();
-    });
-
-    // Logout
-    el("logoutBtn")?.addEventListener("click", () => {
-      clearCreds();
-      renderTable([]);
-      renderStatus("Sesión cerrada.");
-      showModalHard();
-      show(el("logoutBtn"), false);
-    });
-
-    // Add registro
-    el("addBtn")?.addEventListener("click", handleAdd);
-    el("peso")?.addEventListener("keydown", e => { if (e.key==="Enter") handleAdd(); });
-
-    // Aviso si falta URL (no bloquea el modal)
-    if (!TEST_MODE && !isURLOk(APP_SCRIPT_URL)){
-      renderStatus("⚠️ Falta configurar la URL del backend (/exec) en el HTML.", "err");
-    }
-  }
-
-  if (document.readyState === "loading"){
-    document.addEventListener("DOMContentLoaded", init, { once:true });
-  } else {
-    init();
-  }
-
-  // No dejar que un error silencioso rompa el flujo
-  window.addEventListener("error", ev => {
-    console.error(ev.error || ev.message);
-    renderStatus("Error: " + (ev.message || "consulta consola"), "err");
+// API
+async function apiList(userId, token, limit=180){
+  if(!okURL(APP_SCRIPT_URL)) throw new Error("https://script.google.com/macros/s/AKfycbw2gm7eFC6ubXG1Wzbhtjbu_jX-9SoJh7sSNRbj_7SKSLc-aJfqUEO1cHrKsLBd4CxO-Q/exec");
+  const url = new URL(APP_SCRIPT_URL);
+  url.searchParams.set("action","list");
+  url.searchParams.set("userId", userId);
+  url.searchParams.set("token", token);
+  url.searchParams.set("limit", String(limit));
+  const r = await fetch(url);
+  const t = await r.text();
+  try { return JSON.parse(t); } catch { throw new Error("Respuesta no JSON del backend: "+t.slice(0,120)); }
+}
+async function apiAdd(userId, token, weight){
+  if(!okURL(APP_SCRIPT_URL)) throw new Error("APP_SCRIPT_URL no configurada o sin /exec");
+  const r = await fetch(APP_SCRIPT_URL, {
+    method:"POST", headers:{ "Content-Type":"application/json" },
+    body: JSON.stringify({ action:"add", userId, token, weight })
   });
+  const t = await r.text();
+  try { return JSON.parse(t); } catch { throw new Error("Respuesta no JSON del backend: "+t.slice(0,120)); }
+}
+
+// UI
+function log(msg){ $("status").textContent = msg; }
+function renderRows(items){
+  const tb = $("histBody"); tb.innerHTML = "";
+  (items||[]).forEach(row=>{
+    const tr = document.createElement("tr");
+    tr.innerHTML = `<td>${row.date}</td><td>${row.weight}</td>`;
+    tb.appendChild(tr);
+  });
+}
+async function loadHistory(){
+  const {userId, token} = getCreds();
+  if(!userId || !token) return;
+  log("Cargando histórico…");
+  try{
+    const data = await apiList(userId, token);
+    if(data.ok){ renderRows(data.items||[]); log(`OK: ${ (data.items||[]).length } registros.`); }
+    else { log("Error backend: "+(data.error||"desconocido")); }
+  }catch(e){ log("Fallo list: "+e.message); }
+}
+async function addWeight(){
+  const {userId, token} = getCreds();
+  const v = String($("peso").value||"").replace(",",".");
+  const w = Number(v);
+  if(!isFinite(w) || w<20 || w>400){ log("Peso inválido (20–400)."); $("peso").focus(); return; }
+  log("Guardando…");
+  try{
+    const data = await apiAdd(userId, token, w);
+    if(data.ok){ $("peso").value=""; await loadHistory(); log("Registro guardado."); }
+    else { log("Error backend: "+(data.error||"desconocido")); }
+  }catch(e){ log("Fallo add: "+e.message); }
+}
+
+// Auth flow
+function enterApp(){
+  show($("loginSec"), false);
+  show($("appSec"), true);
+  loadHistory();
+}
+function leaveApp(){
+  show($("appSec"), false);
+  show($("loginSec"), true);
+  $("histBody").innerHTML = "";
+}
+
+// Eventos
+$("loginForm").addEventListener("submit",(ev)=>{
+  ev.preventDefault();
+  const u = $("userId").value.trim();
+  const t = $("token").value.trim();
+  if(!u || !t){ log("Completa ID y token."); return; }
+  setCreds(u,t);
+  enterApp();              // <- se entra SIEMPRE
+  log("Sesión iniciada.");
+});
+$("logoutBtn").addEventListener("click",()=>{ clearCreds(); leaveApp(); log("Sesión cerrada."); });
+$("addBtn").addEventListener("click", addWeight);
+
+// Init
+(function init(){
+  // Soporta login por query
+  const url = new URL(location.href);
+  const u = url.searchParams.get("userId");
+  const t = url.searchParams.get("token");
+  if(u && t){ setCreds(u,t); }
+
+  const {userId, token} = getCreds();
+  if(userId && token) enterApp(); else leaveApp();
+
+  if(!okURL(APP_SCRIPT_URL)) log("⚠️ Configura APP_SCRIPT_URL (debe terminar en /exec).");
 })();
 </script>
-
 </body>
 </html>
