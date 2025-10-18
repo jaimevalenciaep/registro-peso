@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <link rel="icon" href="data:,">
   <title>Registro de Peso (kg)</title>
+  <link rel="icon" href="data:,">
   <style>
     :root { --bg:#0b1020; --card:#141b34; --muted:#8ea0b6; --text:#eaf0ff; --accent:#7aa2ff; --danger:#ff6b6b; --ok:#47d16f; }
     *{box-sizing:border-box}
@@ -27,8 +27,7 @@
       background:var(--accent);color:#0b1020;font-weight:600
     }
     button[disabled]{opacity:.6;cursor:not-allowed}
-    .muted{color:var(--muted)}
-    .ok{color:var(--ok)} .err{color:var(--danger)}
+    .muted{color:var(--muted)} .ok{color:var(--ok)} .err{color:var(--danger)}
     table{width:100%;border-collapse:collapse;margin-top:16px;background:#0c1330;border-radius:12px;overflow:hidden}
     th,td{padding:12px;border-bottom:1px solid rgba(255,255,255,.06);text-align:left}
     th{font-weight:600;color:#c9d7ff;background:#0f1740}
@@ -38,13 +37,11 @@
     .center{display:flex;justify-content:center;align-items:center;gap:8px}
     .hide{display:none}
     .footer{padding:0 20px 20px}
-    .link{color:var(--accent);text-decoration:underline}
     .login-backdrop{
       position:fixed;inset:0;background:rgba(0,0,0,.5);backdrop-filter: blur(3px);
       display:flex;align-items:center;justify-content:center;padding:16px
     }
     .login{width:100%;max-width:420px}
-    .right{float:right}
   </style>
 </head>
 <body>
@@ -86,14 +83,12 @@
     </div>
   </div>
 
-  <!-- Modal de acceso (ahora con FORM para que Enter funcione) -->
+  <!-- Modal de acceso con FORM (soporta Enter) -->
   <div class="login-backdrop" id="loginModal" role="dialog" aria-modal="true" aria-labelledby="loginTitle">
     <div class="card login">
       <div class="content">
         <h2 id="loginTitle" style="margin-top:0">Accede a tu registro</h2>
         <p class="muted" style="margin-top:0">Introduce tu <strong>id de usuario</strong> y tu <strong>token</strong>.</p>
-
-        <!-- FORM en lugar de div -->
         <form id="loginForm" style="display:grid;gap:12px">
           <div>
             <label for="userId">ID de usuario</label>
@@ -104,244 +99,152 @@
             <input id="token" name="token" type="password" placeholder="Tu token personal" autocomplete="current-password" required />
           </div>
           <button id="loginBtn" type="submit">Entrar</button>
-          <small class="muted">También puedes abrir la página con <code>?userId=ana&token=TU_TOKEN</code> para autocompletar.</small>
+          <small class="muted">También puedes abrir la página con <code>?userId=ana&token=TU_TOKEN</code> para autologin.</small>
         </form>
       </div>
     </div>
   </div>
 
   <script>
-    // ======= 🔧 CONFIG =======
-    const APP_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxT38_suKcDIKjn78A7iscaPZNXXZ4Jj7x7U8RrMAcfqs3inVlGWKu_7sMcnANEKOAA/exec"; // ← tu URL /exec
-    const DATE_LOCALE = "es-ES"; // dd/mm/yyyy
+    // ========= CONFIG =========
+    // Usa la URL que estés utilizando ahora mismo (termina en /exec).
+    const APP_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxT38_suKcDIKjn78A7iscaPZNXXZ4Jj7x7U8RrMAcfqs3inVlGWKu_7sMcnANEKOAA/exec";
+    const DATE_LOCALE = "es-ES";
     const TZ = "Europe/Madrid";
 
-    // ======= 🧩 Utilidades =======
-    const $ = sel => document.querySelector(sel);
+    // ========= Utils =========
     const el = id => document.getElementById(id);
+    const okURL = u => /^https?:\/\/.+\/exec(\b|$)/.test(u||"");
+    const show = (node, v=true) => node && node.classList.toggle("hide", !v);
+    const fmtDate = d => new Date(d).toLocaleDateString(DATE_LOCALE, {day:'2-digit',month:'2-digit',year:'numeric', timeZone:TZ});
+    const normalize = v => { const n=Number(String(v||"").trim().replace(",",".")); return Number.isFinite(n)?n:null; };
 
-    function fmtDateClient(d) {
-      return new Date(d).toLocaleDateString(DATE_LOCALE, { day: '2-digit', month: '2-digit', year: 'numeric', timeZone: TZ });
+    const setCreds = ({userId, token}) => { localStorage.setItem("userId", userId); localStorage.setItem("token", token); };
+    const getCreds = () => ({ userId: localStorage.getItem("userId"), token: localStorage.getItem("token") });
+    const clearCreds = () => { localStorage.removeItem("userId"); localStorage.removeItem("token"); };
+
+    function renderToday(){ el("today").textContent = "Hoy: " + fmtDate(Date.now()); }
+    function renderStatus(msg, cls="muted"){ el("status").textContent = msg; el("status").className = cls; }
+    function renderTable(rows){
+      const tbody = el("histBody"); tbody.innerHTML="";
+      (rows||[]).forEach(r => { const tr=document.createElement("tr"); tr.innerHTML = `<td>${r.date}</td><td>${r.weight}</td>`; tbody.appendChild(tr); });
+      show(el("histTable"), (rows||[]).length>0);
     }
 
-    function normalizeWeight(input) {
-      if (!input) return null;
-      const s = String(input).trim().replace(",", ".");
-      const n = Number(s);
-      return Number.isFinite(n) ? n : null;
-    }
+    // Fuerza ocultar/mostrar modal
+    function hideModalHard(){ const m=el("loginModal"); if(!m) return; m.classList.add("hide"); m.style.display="none"; m.setAttribute("aria-hidden","true"); }
+    function showModalHard(){ const m=el("loginModal"); if(!m) return; m.classList.remove("hide"); m.style.display="flex"; m.removeAttribute("aria-hidden"); }
 
-    function getCreds() {
-      const url = new URL(window.location.href);
-      const qsUser = url.searchParams.get("userId");
-      const qsToken = url.searchParams.get("token");
-      if (qsUser && qsToken) {
-        localStorage.setItem("userId", qsUser);
-        localStorage.setItem("token", qsToken);
-      }
-      const userId = localStorage.getItem("userId");
-      const token  = localStorage.getItem("token");
-      return { userId, token };
-    }
-
-    function setCreds({userId, token}) {
-      localStorage.setItem("userId", userId);
-      localStorage.setItem("token", token);
-    }
-
-    function clearCreds() {
-      localStorage.removeItem("userId");
-      localStorage.removeItem("token");
-    }
-
-    function show(elm, flag=true){ elm.classList.toggle("hide", !flag); }
-
-    async function apiAdd(userId, token, weight) {
-      const payload = { action: "add", userId, token, weight };
-      const res = await fetch(APP_SCRIPT_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-      if (!res.ok) throw new Error(`Error HTTP ${res.status}`);
-      return res.json();
-    }
-
-    async function apiList(userId, token, limit = 180) {
+    // ========= API =========
+    async function apiList(userId, token, limit=180){
+      if (!okURL(APP_SCRIPT_URL)) throw new Error("Configura APP_SCRIPT_URL (debe acabar en /exec).");
       const url = new URL(APP_SCRIPT_URL);
-      url.searchParams.set("action", "list");
+      url.searchParams.set("action","list");
       url.searchParams.set("userId", userId);
       url.searchParams.set("token", token);
       url.searchParams.set("limit", String(limit));
-      const res = await fetch(url.toString(), { method: "GET" });
-      if (!res.ok) throw new Error(`Error HTTP ${res.status}`);
+      const res = await fetch(url.toString());
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
       return res.json();
     }
 
-    function renderToday() {
-      el("today").textContent = "Hoy: " + fmtDateClient(Date.now());
+    // ⬇⬇⬇ CORS-SAFE: form-urlencode, sin preflight
+    async function apiAdd(userId, token, weight){
+      if (!okURL(APP_SCRIPT_URL)) throw new Error("Configura APP_SCRIPT_URL (debe acabar en /exec).");
+      const payload = { action:"add", userId, token, weight };
+      const body = new URLSearchParams({ data: JSON.stringify(payload) });
+      const res = await fetch(APP_SCRIPT_URL, {
+        method:"POST",
+        headers: { "Content-Type":"application/x-www-form-urlencoded;charset=UTF-8" },
+        body: body.toString()
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      return res.json();
     }
 
-    function renderStatus(msg, type="muted") {
-      const st = el("status");
-      st.textContent = msg;
-      st.className = type;
-    }
-
-    function renderTable(rows) {
-      const body = el("histBody");
-      body.innerHTML = "";
-      for (const r of rows) {
-        const tr = document.createElement("tr");
-        const tdD = document.createElement("td");
-        const tdW = document.createElement("td");
-        tdD.textContent = r.date;
-        tdW.textContent = String(r.weight);
-        tr.appendChild(tdD); tr.appendChild(tdW);
-        body.appendChild(tr);
-      }
-      show(el("histTable"), rows.length > 0);
-    }
-
-    async function loadHistory() {
+    // ========= App =========
+    async function loadHistory(){
       const { userId, token } = getCreds();
       if (!userId || !token) return;
-      try {
-        renderStatus("Cargando histórico…");
+      renderStatus("Cargando histórico…");
+      try{
         const data = await apiList(userId, token);
-        if (data.ok) {
-          renderTable(data.items || []);
-          renderStatus(`Histórico cargado (${(data.items||[]).length} registros).`, "muted");
-        } else {
-          renderStatus(data.error || "No se pudo cargar el histórico.", "err");
-        }
-      } catch (err) {
-        renderStatus("Error al cargar el histórico. Reintenta en unos segundos.", "err");
+        if (data.ok){ renderTable(data.items||[]); renderStatus(`Histórico cargado (${(data.items||[]).length}).`); }
+        else { renderStatus(data.error || "No se pudo cargar el histórico.", "err"); }
+      }catch(e){
+        renderStatus(e.message || "Error al cargar histórico.", "err");
       }
     }
 
-    async function handleAdd() {
+    async function handleAdd(){
       const { userId, token } = getCreds();
-      if (!userId || !token) {
-        renderStatus("Primero inicia sesión.", "err");
-        show(el("loginModal"), true);
-        return;
-      }
-      const weight = normalizeWeight(el("peso").value);
-      if (weight === null || weight < 20 || weight > 400) {
-        renderStatus("Introduce un peso válido entre 20 y 400 kg.", "err");
-        el("peso").focus();
-        return;
-      }
-      el("addBtn").disabled = true;
-      renderStatus("Guardando…");
-      try {
-        const data = await apiAdd(userId, token, weight);
-        if (data.ok) {
-          renderStatus("Registro guardado correctamente.", "ok");
-          el("peso").value = "";
-          await loadHistory();
-        } else {
-          renderStatus(data.error || "No se pudo guardar el registro.", "err");
-        }
-      } catch (err) {
-        renderStatus("Error de red/servidor al guardar.", "err");
-      } finally {
-        el("addBtn").disabled = false;
-      }
+      if (!userId || !token){ renderStatus("Primero inicia sesión.", "err"); showModalHard(); return; }
+      const w = normalize(el("peso").value);
+      if (w==null || w<20 || w>400){ renderStatus("Introduce un peso válido (20–400 kg).", "err"); el("peso").focus(); return; }
+      el("addBtn").disabled = true; renderStatus("Guardando…");
+      try{
+        const data = await apiAdd(userId, token, w);
+        if (data.ok){ el("peso").value=""; renderStatus("Registro guardado.", "ok"); await loadHistory(); }
+        else { renderStatus(data.error || "No se pudo guardar.", "err"); }
+      }catch(e){ renderStatus(e.message || "Error de red/servidor.", "err"); }
+      finally{ el("addBtn").disabled = false; }
     }
 
-    function checkLogin() {
+    function syncCredsFromQuery(){
+      const url = new URL(location.href);
+      const u = url.searchParams.get("userId");
+      const t = url.searchParams.get("token");
+      if (u && t) setCreds({ userId:u, token:t });
+    }
+
+    async function updateAuthUI(){
       const { userId, token } = getCreds();
-      const logged = Boolean(userId && token);
-      show(el("loginModal"), !logged);
-      show(el("logoutBtn"), logged);
-      if (logged) loadHistory();
+      const logged = !!(userId && token);
+      if (logged){
+        hideModalHard();
+        show(el("logoutBtn"), true);
+        await loadHistory();
+      } else {
+        showModalHard();
+        show(el("logoutBtn"), false);
+      }
     }
 
-    // ======= 🎛️ Eventos =======
+    // ========= Eventos / init =========
     window.addEventListener("DOMContentLoaded", () => {
       renderToday();
-      checkLogin();
+      syncCredsFromQuery();
+      updateAuthUI();
 
-      // NUEVO: submit del formulario para que Enter funcione y el modal se cierre siempre
       el("loginForm")?.addEventListener("submit", (e) => {
         e.preventDefault();
         const userId = el("userId").value.trim();
         const token  = el("token").value.trim();
-        if (!userId || !token) {
-          renderStatus("Completa ID de usuario y token para continuar.", "err");
-          return;
-        }
-        setCreds({userId, token});
-        show(el("loginModal"), false);   // cierra el modal
+        if (!userId || !token){ renderStatus("Completa ID y token.", "err"); return; }
+        setCreds({ userId, token });
+        hideModalHard();
         show(el("logoutBtn"), true);
-        renderStatus("Sesión iniciada. Cargando histórico…", "muted");
-        loadHistory();
+        renderStatus("Sesión iniciada. Cargando histórico…");
+        updateAuthUI();
       });
 
-      // Logout y registro de peso
       el("logoutBtn").addEventListener("click", () => {
-        clearCreds();
-        renderTable([]);
-        renderStatus("Sesión cerrada.");
-        show(el("loginModal"), true);
-        show(el("logoutBtn"), false);
+        clearCreds(); renderTable([]); renderStatus("Sesión cerrada.");
+        showModalHard(); show(el("logoutBtn"), false);
       });
 
       el("addBtn").addEventListener("click", handleAdd);
-      el("peso").addEventListener("keydown", (e) => {
-        if (e.key === "Enter") handleAdd();
-      });
+      el("peso").addEventListener("keydown", e => { if (e.key==="Enter") handleAdd(); });
+
+      if (!okURL(APP_SCRIPT_URL)){
+        renderStatus("⚠️ APP_SCRIPT_URL no válida (debe terminar en /exec).", "err");
+      }
+    });
+
+    window.addEventListener("error", ev => {
+      console.error(ev.error || ev.message);
+      renderStatus("Error: " + (ev.message || "consulta consola"), "err");
     });
   </script>
-  <script>
-/* Parche: oculta el modal si hay credenciales guardadas, y también al iniciar sesión */
-(function(){
-  function hasCreds(){
-    try {
-      return localStorage.getItem('userId') && localStorage.getItem('token');
-    } catch { return false; }
-  }
-  function hideModal(){
-    var m = document.getElementById('loginModal');
-    if (!m) return;
-    m.classList.add('hide');
-    m.style.display = 'none';
-    m.setAttribute('aria-hidden', 'true');
-    var lo = document.getElementById('logoutBtn');
-    if (lo) lo.classList.remove('hide');
-  }
-
-  // 1) Al cargar la página
-  document.addEventListener('DOMContentLoaded', function(){
-    if (hasCreds()) hideModal();
-  });
-
-  // 2) Si el usuario envía el formulario de login
-  var lf = document.getElementById('loginForm');
-  if (lf) {
-    lf.addEventListener('submit', function(ev){
-      // OJO: tu script ya guarda en localStorage; aquí solo cerramos el modal por si acaso
-      setTimeout(function(){ if (hasCreds()) hideModal(); }, 0);
-    });
-  }
-
-  // 3) Si haces autologin con ?userId=&token= (tu script ya los guarda): cerrar también
-  (function syncFromQueryAndHide(){
-    try {
-      var url = new URL(location.href);
-      var u = url.searchParams.get('userId');
-      var t = url.searchParams.get('token');
-      if (u && t) {
-        localStorage.setItem('userId', u);
-        localStorage.setItem('token', t);
-        hideModal();
-      }
-    } catch {}
-  })();
-})();
-</script>
-
 </body>
 </html>
