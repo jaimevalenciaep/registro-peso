@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <link rel="icon" href="data:,">
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Registro de Peso (kg)</title>
+  <link rel="icon" href="data:,">
   <style>
     :root { --bg:#0b1020; --card:#141b34; --muted:#8ea0b6; --text:#eaf0ff; --accent:#7aa2ff; --danger:#ff6b6b; --ok:#47d16f; }
     *{box-sizing:border-box}
@@ -83,7 +83,7 @@
     </div>
   </div>
 
-  <!-- Modal de acceso (con FORM y submit) -->
+  <!-- Modal de acceso con FORM -->
   <div class="login-backdrop" id="loginModal" role="dialog" aria-modal="true" aria-labelledby="loginTitle">
     <div class="card login">
       <div class="content">
@@ -106,65 +106,38 @@
   </div>
 
   <script>
-    // ======= 🔧 CONFIG =======
-    const APP_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbw2gm7eFC6ubXG1Wzbhtjbu_jX-9SoJh7sSNRbj_7SKSLc-aJfqUEO1cHrKsLBd4CxO-Q/exec"; // <- pega aquí tu URL /exec
-    const DATE_LOCALE = "es-ES"; // dd/mm/yyyy
+    // ======= 🔧 CONFIG (CAMBIA ESTO) =======
+    const APP_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbw2gm7eFC6ubXG1Wzbhtjbu_jX-9SoJh7sSNRbj_7SKSLc-aJfqUEO1cHrKsLBd4CxO-Q/exec"; // ej: https://script.google.com/macros/s/XXXX/exec
+    const DATE_LOCALE = "es-ES";
     const TZ = "Europe/Madrid";
 
-    // ======= 🧩 Utils =======
-    const $ = s => document.querySelector(s);
+    // ======= 🧩 Utilidades =======
     const el = id => document.getElementById(id);
     const isURLOk = u => typeof u === "string" && /^https?:\/\/.+\/exec(\b|$)/.test(u || "");
+    const show = (node, visible=true) => node && node.classList.toggle("hide", !visible);
 
-    function fmtDateClient(d){
-      return new Date(d).toLocaleDateString(DATE_LOCALE,{ day:'2-digit', month:'2-digit', year:'numeric', timeZone: TZ });
-    }
-    function normalizeWeight(v){
-      if (v == null) return null;
+    const fmtDate = d => new Date(d).toLocaleDateString(DATE_LOCALE,{day:'2-digit',month:'2-digit',year:'numeric',timeZone:TZ});
+    const normalizeWeight = v => {
+      if (v==null) return null;
       const n = Number(String(v).trim().replace(",", "."));
       return Number.isFinite(n) ? n : null;
-    }
-    function getCreds(){
-      const url = new URL(window.location.href);
-      const qsUser = url.searchParams.get("userId");
-      const qsToken = url.searchParams.get("token");
-      if (qsUser && qsToken){
-        localStorage.setItem("userId", qsUser);
-        localStorage.setItem("token", qsToken);
-      }
-      return { userId: localStorage.getItem("userId"), token: localStorage.getItem("token") };
-    }
-    function setCreds({userId, token}){ localStorage.setItem("userId", userId); localStorage.setItem("token", token); }
-    function clearCreds(){ localStorage.removeItem("userId"); localStorage.removeItem("token"); }
-    function show(node, flag=true){ if (node) node.classList.toggle("hide", !flag); }
-    function renderToday(){ el("today").textContent = "Hoy: " + fmtDateClient(Date.now()); }
-    function renderStatus(msg, kind="muted"){ const s = el("status"); s.textContent = msg; s.className = kind; }
+    };
 
+    const getCreds = () => ({ userId: localStorage.getItem("userId"), token: localStorage.getItem("token") });
+    const setCreds = ({userId, token}) => { localStorage.setItem("userId", userId); localStorage.setItem("token", token); };
+    const clearCreds = () => { localStorage.removeItem("userId"); localStorage.removeItem("token"); };
+
+    function renderStatus(msg, cls="muted"){ el("status").textContent = msg; el("status").className = cls; }
+    function renderToday(){ el("today").textContent = "Hoy: " + fmtDate(Date.now()); }
     function renderTable(rows){
-      const body = el("histBody");
-      body.innerHTML = "";
-      for (const r of rows){
-        const tr = document.createElement("tr");
-        tr.innerHTML = `<td>${r.date}</td><td>${r.weight}</td>`;
-        body.appendChild(tr);
-      }
-      show(el("histTable"), rows.length > 0);
+      const body = el("histBody"); body.innerHTML = "";
+      rows.forEach(r => { const tr = document.createElement("tr"); tr.innerHTML = `<td>${r.date}</td><td>${r.weight}</td>`; body.appendChild(tr); });
+      show(el("histTable"), rows.length>0);
     }
 
-    async function apiAdd(userId, token, weight){
-      if (!isURLOk(APP_SCRIPT_URL)) throw new Error("⚠️ Falta configurar APP_SCRIPT_URL (debe terminar en /exec).");
-      const res = await fetch(APP_SCRIPT_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action:"add", userId, token, weight })
-      });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data = await res.json();
-      return data;
-    }
-
+    // ======= 🌐 API =======
     async function apiList(userId, token, limit=180){
-      if (!isURLOk(APP_SCRIPT_URL)) throw new Error("⚠️ Falta configurar APP_SCRIPT_URL (debe terminar en /exec).");
+      if (!isURLOk(APP_SCRIPT_URL)) throw new Error("Falta configurar APP_SCRIPT_URL (termina en /exec).");
       const url = new URL(APP_SCRIPT_URL);
       url.searchParams.set("action","list");
       url.searchParams.set("userId", userId);
@@ -172,80 +145,78 @@
       url.searchParams.set("limit", String(limit));
       const res = await fetch(url.toString());
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data = await res.json();
-      return data;
+      return res.json();
     }
 
-    async function loadHistory(){
+    async function apiAdd(userId, token, weight){
+      if (!isURLOk(APP_SCRIPT_URL)) throw new Error("Falta configurar APP_SCRIPT_URL (termina en /exec).");
+      const res = await fetch(APP_SCRIPT_URL, {
+        method: "POST",
+        headers: { "Content-Type":"application/json" },
+        body: JSON.stringify({ action:"add", userId, token, weight })
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      return res.json();
+    }
+
+    // ======= 🚪 Auth/UI =======
+    function syncCredsFromQuery(){
+      const url = new URL(location.href);
+      const u = url.searchParams.get("userId");
+      const t = url.searchParams.get("token");
+      if (u && t){ setCreds({ userId:u, token:t }); }
+    }
+
+    async function updateAuthUI(){
       const { userId, token } = getCreds();
-      if (!userId || !token) return;
-      try {
-        renderStatus("Cargando histórico…");
-        const data = await apiList(userId, token);
-        if (data.ok){
-          renderTable(data.items || []);
-          renderStatus(`Histórico cargado (${(data.items||[]).length}).`);
-        } else {
-          renderStatus(data.error || "No se pudo cargar el histórico.", "err");
+      const logged = !!(userId && token);
+      show(el("loginModal"), !logged);
+      show(el("logoutBtn"), logged);
+      if (logged) {
+        try {
+          renderStatus("Cargando histórico…");
+          const data = await apiList(userId, token);
+          if (data.ok){ renderTable(data.items||[]); renderStatus(`Histórico cargado (${(data.items||[]).length}).`); }
+          else { renderStatus(data.error || "No se pudo cargar el histórico.", "err"); }
+        } catch (e){
+          renderStatus(e.message || "Error al cargar histórico.", "err");
         }
-      } catch (e){
-        renderStatus(e.message || "Error al cargar el histórico.", "err");
       }
     }
 
     async function handleAdd(){
       const { userId, token } = getCreds();
       if (!userId || !token){ renderStatus("Primero inicia sesión.", "err"); show(el("loginModal"), true); return; }
-      const weight = normalizeWeight(el("peso").value);
-      if (weight == null || weight < 20 || weight > 400){ renderStatus("Introduce un peso válido (20–400 kg).", "err"); el("peso").focus(); return; }
-      el("addBtn").disabled = true;
-      renderStatus("Guardando…");
+      const w = normalizeWeight(el("peso").value);
+      if (w==null || w<20 || w>400){ renderStatus("Introduce un peso válido (20–400 kg).", "err"); el("peso").focus(); return; }
+      el("addBtn").disabled = true; renderStatus("Guardando…");
       try {
-        const data = await apiAdd(userId, token, weight);
-        if (data.ok){
-          renderStatus("Registro guardado.", "ok");
-          el("peso").value = "";
-          await loadHistory();
-        } else {
-          renderStatus(data.error || "No se pudo guardar el registro.", "err");
-        }
-      } catch(e){
-        renderStatus(e.message || "Error de red/servidor al guardar.", "err");
-      } finally {
-        el("addBtn").disabled = false;
-      }
+        const data = await apiAdd(userId, token, w);
+        if (data.ok){ renderStatus("Registro guardado.", "ok"); el("peso").value=""; await updateAuthUI(); }
+        else { renderStatus(data.error || "No se pudo guardar.", "err"); }
+      } catch(e){ renderStatus(e.message || "Error de red/servidor.", "err"); }
+      finally { el("addBtn").disabled = false; }
     }
 
-    function checkLogin(){
-      const { userId, token } = getCreds();
-      const logged = Boolean(userId && token);
-      show(el("loginModal"), !logged);
-      show(el("logoutBtn"), logged);
-      if (logged) loadHistory();
-    }
-
-    // ======= 🎛️ Eventos =======
+    // ======= 🎛️ Init & eventos =======
     window.addEventListener("DOMContentLoaded", () => {
       renderToday();
-      checkLogin();
+      syncCredsFromQuery();   // ← permite login automático con ?userId&token
+      updateAuthUI();
 
-      // Form submit: cierra SIEMPRE el modal al iniciar sesión (click o Enter)
-      el("loginForm")?.addEventListener("submit", (e) => {
-        e.preventDefault();
+      el("loginForm").addEventListener("submit", (ev) => {
+        ev.preventDefault();
         const userId = el("userId").value.trim();
         const token  = el("token").value.trim();
-        if (!userId || !token){
-          renderStatus("Completa ID y token.", "err");
-          return;
-        }
+        if (!userId || !token){ renderStatus("Completa ID y token.", "err"); return; }
         setCreds({ userId, token });
-        show(el("loginModal"), false);      // <- se cierra aquí
+        show(el("loginModal"), false);   // ← se cierra SIEMPRE aquí
         show(el("logoutBtn"), true);
         renderStatus("Sesión iniciada. Cargando histórico…");
-        loadHistory();
+        updateAuthUI();
       });
 
-      el("logoutBtn")?.addEventListener("click", () => {
+      el("logoutBtn").addEventListener("click", () => {
         clearCreds();
         renderTable([]);
         renderStatus("Sesión cerrada.");
@@ -253,17 +224,18 @@
         show(el("logoutBtn"), false);
       });
 
-      el("addBtn")?.addEventListener("click", handleAdd);
-      el("peso")?.addEventListener("keydown", (e) => { if (e.key === "Enter") handleAdd(); });
+      el("addBtn").addEventListener("click", handleAdd);
+      el("peso").addEventListener("keydown", e => { if (e.key==="Enter") handleAdd(); });
 
-      // Aviso si falta URL
+      // Aviso si falta URL (no bloquea el cierre del modal)
       if (!isURLOk(APP_SCRIPT_URL)){
         renderStatus("⚠️ Falta configurar la URL del backend (/exec) en el HTML.", "err");
       }
     });
 
-    // Captura errores globales para no romper flujo
-    window.addEventListener("error", (ev) => {
+    // No dejes que un error JS bloquee el flujo del modal
+    window.addEventListener("error", ev => {
+      console.error(ev.error || ev.message);
       renderStatus("Error: " + (ev.message || "consulta consola"), "err");
     });
   </script>
