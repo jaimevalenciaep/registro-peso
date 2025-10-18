@@ -5,14 +5,14 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Registro de Peso (kg)</title>
 
-  <!-- CSS externo -->
+  <!-- CSS externo (incluye marca de agua y paleta basada en tu logo) -->
   <link rel="stylesheet" href="./assets/css/styles.css">
 
   <!-- Favicon (evita 404 si no tienes uno) -->
   <link rel="icon" href="data:,">
 
-  <!-- Pre-carga del logo -->
-  <link rel="preload" as="image" href="./assets/img/logo-texto-sin-fondo.png?v=1" />
+  <!-- Pre-carga de la imagen usada como marca de agua en el CSS -->
+  <link rel="preload" as="image" href="./assets/img/logo-sin-fondo.png" />
 
   <!-- Opcional: hint de conexión hacia Apps Script -->
   <link rel="preconnect" href="https://script.google.com" crossorigin>
@@ -20,18 +20,12 @@
 <body>
   <div class="wrap">
     <div class="card">
-      <!-- CABECERA CON LOGO COMO TÍTULO -->
+      <!-- CABECERA CON TÍTULO TIPOGRÁFICO (texto fuera de la imagen) -->
       <header class="brand-header">
-        <img
-          src="./assets/img/logo-texto-sin-fondo.png?v=1"
-          alt="Registro diario de peso — Tu marca"
-          class="brand-logo"
-          loading="eager"
-          decoding="async"
-        />
-        <!-- H1 oculto para accesibilidad y SEO -->
-        <h1 class="sr-only">Registro diario de peso</h1>
-
+        <h1 class="brand-title">
+          <span class="brand-initials">JV</span>
+          <span class="brand-title-text">Registro diario de peso</span>
+        </h1>
         <p class="muted">Introduce tu peso en <strong>kg</strong>. La fecha se guarda automáticamente (dd/mm/yyyy).</p>
       </header>
 
