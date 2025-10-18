@@ -24,13 +24,13 @@
           <span class="brand-initials">JV</span>
           <span class="brand-title-text">Registro diario de peso</span>
         </h1>
-        <p class="muted">Introduce tu peso en <strong>kg</strong> y, si quieres, ajusta la <strong>fecha</strong>. El guardado usa dd/mm/yyyy.</p>
+        <p class="muted">Introduce tu peso en <strong>kg</strong> y, si lo necesitas, ajusta la <strong>fecha</strong>. Se guarda en formato dd/mm/yyyy.</p>
       </header>
 
       <div class="content">
+        <!-- Solo el botón de sesión, alineado a la derecha -->
         <div class="actions">
-          <span id="today" class="pill">Hoy: —/—/—</span>
-          <div class="center">
+          <div class="center" style="margin-left:auto;">
             <button id="logoutBtn" type="button" class="hide" title="Cerrar sesión">Cerrar sesión</button>
           </div>
         </div>
@@ -55,7 +55,7 @@
           <div>
             <label for="fecha">Fecha</label>
             <input id="fecha" type="date" />
-            <small class="muted">Opcional: para pesos de días pasados.</small>
+            <small class="muted">Por defecto: hoy.</small>
           </div>
           <div>
             <button id="addBtn" type="button">Registrar</button>
@@ -115,10 +115,8 @@
     const el = id => document.getElementById(id);
     const okURL = u => /^https?:\/\/.+\/exec(\b|$)/.test(u||"");
     const show = (node, v=true) => node && node.classList.toggle("hide", !v);
-    const fmtDate = d => new Date(d).toLocaleDateString(DATE_LOCALE, {day:'2-digit',month:'2-digit',year:'numeric', timeZone:TZ});
 
     const normalize = v => { const n=Number(String(v||"").trim().replace(",", ".")); return Number.isFinite(n)?n:null; };
-
     function pad2(n){ return String(n).padStart(2,"0"); }
     function todayISO(){
       const now = new Date();
@@ -134,7 +132,6 @@
     const getCreds = () => ({ userId: localStorage.getItem("userId"), token: localStorage.getItem("token") });
     const clearCreds = () => { localStorage.removeItem("userId"); localStorage.removeItem("token"); };
 
-    function renderToday(){ el("today").textContent = "Hoy: " + fmtDate(Date.now()); }
     function renderStatus(msg, cls="muted"){ const s=el("status"); s.textContent = msg; s.className = cls; }
 
     // ========= Parse robusto =========
@@ -215,7 +212,7 @@
       const w = normalize(el("peso").value);
       if (w==null || w<20 || w>400){ renderStatus("Introduce un peso válido (20–400 kg).", "err"); el("peso").focus(); return; }
 
-      // Fecha: si el usuario no elige, usamos hoy; convertimos a dd/mm/yyyy
+      // Fecha: usa la del selector (por defecto ya es hoy); convertimos a dd/mm/yyyy
       const iso = el("fecha").value || todayISO();
       const dateStr = isoToDDMMYYYY(iso);
 
@@ -273,7 +270,6 @@
 
     // ========= Init =========
     window.addEventListener("DOMContentLoaded", () => {
-      renderToday();
       syncCredsFromQuery();
       updateAuthUI();
 
