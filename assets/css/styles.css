@@ -183,3 +183,32 @@ tr:last-child td{ border-bottom:none; }
   button{ transition:none; }
   .hero-img{ transition:none; }
 }
+
+/* ——— Pie de página: colaboración ——— */
+.footer .collab{
+  margin-top:14px;
+  padding-top:12px;
+  border-top:1px solid var(--border);
+  display:flex;
+  align-items:center;
+  justify-content:space-between; /* texto izq, logo dcha */
+  gap:12px;
+}
+
+.footer .collab small{
+  color:var(--muted);
+  font-size:.95rem;
+}
+
+.collab-logo{
+  height:24px;
+  width:auto;
+  object-fit:contain;
+  image-rendering:auto;
+  opacity:.95;
+}
+
+@media (max-width:480px){
+  .collab-logo{ height:20px; }
+}
+
