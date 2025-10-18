@@ -1,6 +1,6 @@
-/* ===== JV Registro de Peso — styles.css (completo) ===== */
+/* ===== JV Registro de Peso — styles.css ===== */
 :root{
-  /* Paleta basada en tu logo (grafito + turquesa) */
+  /* Paleta basada en tu logo */
   --bg:#0f1318;
   --card:#171b22;
   --text:#e9f2f2;
@@ -14,10 +14,10 @@
   --border:rgba(255,255,255,.08);
   --shadow:0 12px 35px rgba(0,0,0,.45);
 
-  /* Marca de agua (usa assets/img/logo-con-fondo.png) */
+  /* Marca de agua del fondo (discreta) */
   --wm-url: url("../img/logo-con-fondo.png");
   --wm-size: min(64vw, 520px);
-  --wm-opacity: .08; /* ↑ más visible | ↓ más sutil */
+  --wm-opacity: .08;
 }
 
 *{ box-sizing:border-box; }
@@ -34,28 +34,21 @@ body{
   position:relative;
 }
 
-/* === Marca de agua global (detrás del contenido) === */
+/* Marca de agua */
 body::before{
   content:"";
-  position:fixed;
-  inset:0;
+  position:fixed; inset:0;
   background-image: var(--wm-url);
   background-repeat: no-repeat;
   background-size: var(--wm-size);
-  /* Posición recomendada: arriba-derecha con margen */
-  background-position: right 6vw top 6vh;
+  background-position: right 6vw top 6vh; /* desktop */
   opacity: var(--wm-opacity);
   filter: drop-shadow(0 0 22px rgba(44,200,189,.16));
   pointer-events:none;
   z-index:0;
 }
-
-/* Móvil: más pequeña y centrada arriba */
 @media (max-width: 640px){
-  :root{
-    --wm-size: min(86vw, 380px);
-    --wm-opacity: .07;
-  }
+  :root{ --wm-size: min(86vw, 380px); --wm-opacity: .07; }
   body::before{ background-position: center 10vh; }
 }
 
@@ -67,44 +60,31 @@ body::before{
   border:1px solid var(--border);
   border-radius:16px;
   box-shadow:var(--shadow);
+  overflow:hidden; /* para que el hero siga el radio */
 }
 
-/* --- Header / Título tipográfico --- */
-header{ padding:20px 20px 0; }
-header p{ margin:.25rem 0 1rem; color:var(--muted); }
-.brand-header{ padding:14px 20px 0; }
-
-.brand-title{
-  margin:0 0 .35rem 0;
-  display:flex; flex-wrap:wrap; align-items:baseline; gap:10px 12px;
+/* === HERO (cabecero con imagen) === */
+.brand-header.hero{
+  padding:0;
+  border-bottom:1px solid var(--border);
 }
-.brand-initials{
-  font-weight:900;
-  font-size:clamp(28px, 7vw, 44px);
-  line-height:1;
-  letter-spacing:.02em;
-  color:var(--accent);
-  text-shadow:
-    0 0 14px rgba(44,200,189,.45),
-    0 0 3px rgba(44,200,189,.6);
-}
-.brand-title-text{
-  font-weight:700;
-  font-size:clamp(16px, 3.6vw, 22px);
-  color:#d7efed;
+.hero-img{
+  display:block;
+  width:100%;
+  height:auto;
+  max-width:100%;
+  image-rendering:auto;
+  /* Sutil refuerzo visual del blanco del logo con un fondo suave */
+  background:
+    radial-gradient(800px 300px at 50% 0%, rgba(44,200,189,.10), transparent 60%),
+    linear-gradient(180deg, rgba(255,255,255,.02), rgba(0,0,0,0));
 }
 
-/* Accesibilidad helper */
-.sr-only{
-  position:absolute !important; width:1px; height:1px; padding:0; margin:-1px;
-  overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0;
-}
-
-/* --- Contenido y formularios --- */
+/* Contenido y formulario */
 .content{ padding:20px; }
 
 label{ display:block; margin:.25rem 0 .35rem; }
-input[type="text"],input[type="password"],input[type="number"]{
+input[type="text"],input[type="password"],input[type="number"],input[type="date"]{
   width:100%; padding:12px 14px; border-radius:12px;
   border:1px solid rgba(255,255,255,.12);
   background:#0d1219; color:var(--text); font-size:1rem; outline:none;
@@ -118,9 +98,11 @@ input:focus-visible{
   background:#0c1117;
 }
 
-.row{ display:grid; grid-template-columns:1fr auto; gap:12px; align-items:end; }
+.row{ display:grid; grid-template-columns:1fr 1fr auto; gap:12px; align-items:end; }
+@media (max-width:640px){
+  .row{ grid-template-columns:1fr; }
+}
 
-/* Botones */
 button{
   cursor:pointer;
   border:1px solid rgba(255,255,255,.12);
@@ -138,18 +120,15 @@ button:active{ transform:translateY(0); background:var(--accent-700); }
 button:focus-visible{ outline:none; box-shadow:0 0 0 3px var(--ring), 0 6px 18px rgba(44,200,189,.22); }
 button[disabled]{ opacity:.6; cursor:not-allowed; box-shadow:none; }
 
+.actions{
+  display:flex; gap:8px; align-items:center; justify-content:space-between;
+  margin-top:4px;
+}
+
 .muted{ color:var(--muted); }
 .ok{ color:var(--ok); }
 .err{ color:var(--danger); }
 
-/* Pills */
-.pill{
-  padding:6px 10px; border-radius:999px;
-  background:#11161c; border:1px solid rgba(44,200,189,.22);
-  color:#cfe8e6; font-size:.9rem;
-}
-
-/* --- Tabla --- */
 table{
   width:100%;
   border-collapse:collapse;
@@ -172,24 +151,17 @@ th{
 tbody tr:hover td{ background:rgba(44,200,189,.05); }
 tr:last-child td{ border-bottom:none; }
 
-/* --- Acciones / layout --- */
-.actions{
-  display:flex; gap:8px; align-items:center; justify-content:space-between;
-  margin-top:12px;
-}
 .center{ display:flex; justify-content:center; align-items:center; gap:8px; }
-
 .hide{ display:none !important; }
 .footer{ padding:0 20px 20px; color:var(--muted); }
 
-/* --- Modal login --- */
+/* Modal */
 .login-backdrop{
   position:fixed; inset:0;
   background:rgba(10,14,18,.65);
   backdrop-filter: blur(4px);
   display:flex; align-items:center; justify-content:center;
-  padding:16px;
-  z-index:2; /* sobre la marca de agua */
+  padding:16px; z-index:2;
 }
 .login{ width:100%; max-width:420px; }
 .login .card{ border-color:rgba(44,200,189,.18); }
@@ -204,20 +176,3 @@ tr:last-child td{ border-bottom:none; }
 }
 .btn-del:hover{ filter:brightness(1.06); }
 .btn-del:focus-visible{ box-shadow:0 0 0 3px rgba(255,107,107,.35); }
-
-/* --- Responsivo móvil --- */
-@media (max-width:480px){
-  .wrap{ margin:24px auto; padding:0 12px; }
-  .brand-header{ padding:10px 16px 0; }
-  .brand-title{ gap:8px 10px; }
-  .brand-title-text{ font-size:clamp(15px, 4.2vw, 20px); }
-  .pill{ font-size:.85rem; }
-  th,td{ padding:10px; }
-}
-
-/* Full-bleed opcional para header si algún día lo usas */
-.full-bleed{
-  margin-left: calc(50% - 50vw);
-  margin-right: calc(50% - 50vw);
-}
-.full-bleed + .content{ padding-top:12px; }
