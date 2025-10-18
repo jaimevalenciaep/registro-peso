@@ -8,11 +8,14 @@
   <!-- CSS externo -->
   <link rel="stylesheet" href="./assets/css/styles.css">
 
-  <!-- Evita 404 de favicon si no tienes uno subido -->
+  <!-- Favicon (evita 404 si no tienes uno) -->
   <link rel="icon" href="data:,">
 
-  <!-- Pre-carga del logo para que aparezca instantáneo -->
+  <!-- Pre-carga del logo -->
   <link rel="preload" as="image" href="./assets/img/logo-texto-con-fondo.png?v=1" />
+
+  <!-- Opcional: hint de conexión hacia Apps Script -->
+  <link rel="preconnect" href="https://script.google.com" crossorigin>
 </head>
 <body>
   <div class="wrap">
@@ -36,22 +39,32 @@
         <div class="actions">
           <span id="today" class="pill">Hoy: —/—/—</span>
           <div class="center">
-            <button id="logoutBtn" class="hide" title="Cerrar sesión">Cerrar sesión</button>
+            <button id="logoutBtn" type="button" class="hide" title="Cerrar sesión">Cerrar sesión</button>
           </div>
         </div>
 
         <div class="row" style="margin-top:14px">
           <div>
             <label for="peso">Peso (kg)</label>
-            <input id="peso" type="number" inputmode="decimal" step="0.1" min="20" max="400" placeholder="Ej: 72.4" autocomplete="off" />
-            <small class="muted">Usa punto o coma para decimales.</small>
+            <input
+              id="peso"
+              type="number"
+              inputmode="decimal"
+              enterkeyhint="done"
+              step="0.1"
+              min="20"
+              max="400"
+              placeholder="Ej: 72.4"
+              autocomplete="off"
+            />
+            <small class="muted" id="pesoHelp">Usa punto o coma para decimales.</small>
           </div>
           <div>
-            <button id="addBtn">Registrar</button>
+            <button id="addBtn" type="button">Registrar</button>
           </div>
         </div>
 
-        <p id="status" class="muted" aria-live="polite" style="margin:12px 0 0"></p>
+        <p id="status" class="muted" role="status" aria-live="polite" aria-atomic="true" style="margin:12px 0 0"></p>
 
         <table id="histTable" class="hide" aria-label="Histórico de pesos">
           <thead>
@@ -77,7 +90,7 @@
       <div class="content">
         <h2 id="loginTitle" style="margin-top:0">Accede a tu registro</h2>
         <p class="muted" style="margin-top:0">Introduce tu <strong>id de usuario</strong> y tu <strong>token</strong>.</p>
-        <form id="loginForm" style="display:grid;gap:12px">
+        <form id="loginForm" style="display:grid;gap:12px" autocomplete="on">
           <div>
             <label for="userId">ID de usuario</label>
             <input id="userId" name="userId" type="text" placeholder="Ej: ana" autocomplete="username" required />
@@ -105,14 +118,14 @@
     const okURL = u => /^https?:\/\/.+\/exec(\b|$)/.test(u||"");
     const show = (node, v=true) => node && node.classList.toggle("hide", !v);
     const fmtDate = d => new Date(d).toLocaleDateString(DATE_LOCALE, {day:'2-digit',month:'2-digit',year:'numeric', timeZone:TZ});
-    const normalize = v => { const n=Number(String(v||"").trim().replace(",",".")); return Number.isFinite(n)?n:null; };
+    const normalize = v => { const n=Number(String(v||"").trim().replace(",", ".")); return Number.isFinite(n)?n:null; };
 
     const setCreds = ({userId, token}) => { localStorage.setItem("userId", userId); localStorage.setItem("token", token); };
     const getCreds = () => ({ userId: localStorage.getItem("userId"), token: localStorage.getItem("token") });
     const clearCreds = () => { localStorage.removeItem("userId"); localStorage.removeItem("token"); };
 
     function renderToday(){ el("today").textContent = "Hoy: " + fmtDate(Date.now()); }
-    function renderStatus(msg, cls="muted"){ el("status").textContent = msg; el("status").className = cls; }
+    function renderStatus(msg, cls="muted"){ const s=el("status"); s.textContent = msg; s.className = cls; }
 
     // ========= Parse robusto (por si algún deployment devuelve data=...) =========
     async function parseJSONResponse(res){
@@ -168,7 +181,7 @@
           <td>${r.date}</td>
           <td>${r.weight}</td>
           <td>
-            <button class="btn-del btn-small" data-row="${r.row}" data-date="${r.date}" data-weight="${r.weight}" title="Eliminar">🗑️ Eliminar</button>
+            <button class="btn-del btn-small" type="button" data-row="${r.row}" data-date="${r.date}" data-weight="${r.weight}" title="Eliminar">🗑️ Eliminar</button>
           </td>
         `;
         tb.appendChild(tr);
