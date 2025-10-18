@@ -29,7 +29,7 @@
     button[disabled]{opacity:.6;cursor:not-allowed}
     .muted{color:var(--muted)} .ok{color:var(--ok)} .err{color:var(--danger)}
     table{width:100%;border-collapse:collapse;margin-top:16px;background:#0c1330;border-radius:12px;overflow:hidden}
-    th,td{padding:12px;border-bottom:1px solid rgba(255,255,255,.06);text-align:left}
+    th,td{padding:12px;border-bottom:1px solid rgba(255,255,255,.06);text-align:left; vertical-align:middle}
     th{font-weight:600;color:#c9d7ff;background:#0f1740}
     tr:last-child td{border-bottom:none}
     .actions{display:flex;gap:8px;align-items:center;justify-content:space-between;margin-top:12px}
@@ -37,6 +37,9 @@
     .center{display:flex;justify-content:center;align-items:center;gap:8px}
     .hide{display:none}
     .footer{padding:0 20px 20px}
+    .btn-del{background:#2b3258;border-color:#444;color:#ffb3b3}
+    .btn-del:hover{filter:brightness(1.1)}
+    .btn-small{padding:8px 10px;font-size:.9rem;border-radius:10px}
     .login-backdrop{ position:fixed;inset:0;background:rgba(0,0,0,.5);backdrop-filter: blur(3px);display:flex;align-items:center;justify-content:center;padding:16px }
     .login{width:100%;max-width:420px}
   </style>
@@ -66,7 +69,7 @@
         <p id="status" class="muted" aria-live="polite" style="margin:12px 0 0"></p>
 
         <table id="histTable" class="hide" aria-label="Histórico de pesos">
-          <thead><tr><th>Fecha (dd/mm/yyyy)</th><th>Peso (kg)</th></tr></thead>
+          <thead><tr><th>Fecha (dd/mm/yyyy)</th><th>Peso (kg)</th><th>Acciones</th></tr></thead>
           <tbody id="histBody"></tbody>
         </table>
       </div>
@@ -92,7 +95,8 @@
 
   <script>
     // ========= CONFIG =========
-    const APP_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbztzYHIJTgX6ByuFE5dQ6IQ5XKy75VjXOa5pEAVYcy2M0zkiEqdmxHrbBfh3xO3YNUG/exec"; // <- pega aquí la URL /exec del deployment NUEVO
+    // ⚠️ Pega aquí la URL /exec del deployment VIGENTE
+    const APP_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxKdPLwPSupjMsZDh2r53_jHcZWWY1_FYDHWaAUrih1zYlOqTGvigSeZCB8YzwX_ciT/exec";
     const DATE_LOCALE = "es-ES"; const TZ = "Europe/Madrid";
 
     // ========= Utils =========
@@ -106,23 +110,16 @@
     const clearCreds = () => { localStorage.removeItem("userId"); localStorage.removeItem("token"); };
     function renderToday(){ el("today").textContent = "Hoy: " + fmtDate(Date.now()); }
     function renderStatus(msg, cls="muted"){ el("status").textContent = msg; el("status").className = cls; }
-    function renderTable(rows){ const tb=el("histBody"); tb.innerHTML=""; (rows||[]).forEach(r=>{ const tr=document.createElement("tr"); tr.innerHTML=`<td>${r.date}</td><td>${r.weight}</td>`; tb.appendChild(tr); }); show(el("histTable"), (rows||[]).length>0); }
-    function hideModal(){ const m=el("loginModal"); if(!m) return; m.classList.add("hide"); m.style.display="none"; m.setAttribute("aria-hidden","true"); }
-    function showModal(){ const m=el("loginModal"); if(!m) return; m.classList.remove("hide"); m.style.display="flex"; m.removeAttribute("aria-hidden"); }
 
-    // ========= API helpers: parse robusto =========
+    // ========= Parse robusto =========
     async function parseJSONResponse(res){
       const txt = await res.text();
-      // 1) JSON estándar
       try { return JSON.parse(txt); } catch {}
-      // 2) Respuesta tipo "data=...json-url-encoded..."
-      if (txt.startsWith("data=")) {
-        try { const decoded = decodeURIComponent(txt.slice(5)); return JSON.parse(decoded); } catch {}
-      }
-      // 3) Falla: devolvemos error con cuerpo recortado
+      if (txt.startsWith("data=")) { try { return JSON.parse(decodeURIComponent(txt.slice(5))); } catch {} }
       throw new Error("Respuesta no JSON del backend: " + txt.slice(0,120));
     }
 
+    // ========= API =========
     async function apiList(userId, token, limit=180){
       if (!okURL(APP_SCRIPT_URL)) throw new Error("Configura APP_SCRIPT_URL (debe acabar en /exec).");
       const url = new URL(APP_SCRIPT_URL);
@@ -137,8 +134,7 @@
     // POST sin preflight (x-www-form-urlencoded)
     async function apiAdd(userId, token, weight){
       if (!okURL(APP_SCRIPT_URL)) throw new Error("Configura APP_SCRIPT_URL (debe acabar en /exec).");
-      const payload = { action:"add", userId, token, weight };
-      const body = new URLSearchParams({ data: JSON.stringify(payload) });
+      const body = new URLSearchParams({ data: JSON.stringify({ action:"add", userId, token, weight }) });
       const res = await fetch(APP_SCRIPT_URL, {
         method:"POST",
         headers: { "Content-Type":"application/x-www-form-urlencoded;charset=UTF-8" },
@@ -147,7 +143,36 @@
       return parseJSONResponse(res);
     }
 
-    // ========= App =========
+    // ❌ Eliminar registro
+    async function apiDelete(userId, token, row){
+      if (!okURL(APP_SCRIPT_URL)) throw new Error("Configura APP_SCRIPT_URL (debe acabar en /exec).");
+      const body = new URLSearchParams({ data: JSON.stringify({ action:"delete", userId, token, row }) });
+      const res = await fetch(APP_SCRIPT_URL, {
+        method:"POST",
+        headers: { "Content-Type":"application/x-www-form-urlencoded;charset=UTF-8" },
+        body: body.toString()
+      });
+      return parseJSONResponse(res);
+    }
+
+    // ========= Render =========
+    function renderTable(rows){
+      const tb = el("histBody");
+      tb.innerHTML = "";
+      (rows||[]).forEach(r=>{
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${r.date}</td>
+          <td>${r.weight}</td>
+          <td>
+            <button class="btn-del btn-small" data-row="${r.row}" data-date="${r.date}" data-weight="${r.weight}" title="Eliminar">🗑️ Eliminar</button>
+          </td>
+        `;
+        tb.appendChild(tr);
+      });
+      show(el("histTable"), (rows||[]).length>0);
+    }
+
     async function loadHistory(){
       const { userId, token } = getCreds();
       if (!userId || !token) return;
@@ -173,6 +198,30 @@
       finally{ el("addBtn").disabled = false; }
     }
 
+    // Delegación de clics para borrar
+    document.addEventListener("click", async (e)=>{
+      const btn = e.target.closest(".btn-del");
+      if (!btn) return;
+      const row = Number(btn.dataset.row);
+      const date = btn.dataset.date;
+      const weight = btn.dataset.weight;
+      if (!Number.isFinite(row) || row<2){ renderStatus("Registro inválido.", "err"); return; }
+      if (!confirm(`¿Eliminar el registro del ${date} (${weight} kg)? Esta acción no se puede deshacer.`)) return;
+      const { userId, token } = getCreds();
+      if (!userId || !token){ renderStatus("Primero inicia sesión.", "err"); return; }
+      btn.disabled = true; renderStatus("Eliminando…");
+      try {
+        const res = await apiDelete(userId, token, row);
+        if (res.ok){ renderStatus("Registro eliminado.", "ok"); await loadHistory(); }
+        else { renderStatus(res.error || "No se pudo eliminar.", "err"); }
+      } catch(err){ renderStatus(err.message || "Error al eliminar.", "err"); }
+      finally{ btn.disabled = false; }
+    });
+
+    // Modal helpers
+    function hideModal(){ const m=el("loginModal"); if(!m) return; m.classList.add("hide"); m.style.display="none"; m.setAttribute("aria-hidden","true"); }
+    function showModal(){ const m=el("loginModal"); if(!m) return; m.classList.remove("hide"); m.style.display="flex"; m.removeAttribute("aria-hidden"); }
+
     function syncCredsFromQuery(){
       const url = new URL(location.href);
       const u = url.searchParams.get("userId");
@@ -187,9 +236,9 @@
       else { showModal(); el("logoutBtn").classList.add("hide"); }
     }
 
-    // ========= Eventos / init =========
+    // ========= Init / eventos =========
     window.addEventListener("DOMContentLoaded", () => {
-      el("today").textContent = "Hoy: " + fmtDate(Date.now());
+      renderToday();
       syncCredsFromQuery();
       updateAuthUI();
 
@@ -198,10 +247,8 @@
         const userId = el("userId").value.trim();
         const token  = el("token").value.trim();
         if (!userId || !token){ renderStatus("Completa ID y token.", "err"); return; }
-        setCreds({ userId, token });
-        hideModal(); el("logoutBtn").classList.remove("hide");
-        renderStatus("Sesión iniciada. Cargando histórico…");
-        updateAuthUI();
+        setCreds({ userId, token }); hideModal(); el("logoutBtn").classList.remove("hide");
+        renderStatus("Sesión iniciada. Cargando histórico…"); updateAuthUI();
       });
 
       el("logoutBtn").addEventListener("click", () => {
