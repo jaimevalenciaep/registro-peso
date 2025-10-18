@@ -1,4 +1,4 @@
-/* ===== JV Registro de Peso — styles.css ===== */
+/* ===== JV Registro de Peso — styles.css (revisado) ===== */
 :root{
   /* Paleta basada en tu logo */
   --bg:#0f1318;
@@ -14,7 +14,7 @@
   --border:rgba(255,255,255,.08);
   --shadow:0 12px 35px rgba(0,0,0,.45);
 
-  /* Marca de agua del fondo (discreta) */
+  /* Marca de agua del fondo */
   --wm-url: url("../img/logo-con-fondo.png");
   --wm-size: min(64vw, 520px);
   --wm-opacity: .08;
@@ -25,23 +25,24 @@ html,body{ height:100%; }
 
 body{
   margin:0;
+  color:var(--text);
+  font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,"Helvetica Neue",Arial;
   background:
     radial-gradient(1200px 600px at 10% -10%, rgba(44,200,189,.08), transparent 60%),
     radial-gradient(900px 500px at 110% 0%, rgba(44,200,189,.06), transparent 55%),
     linear-gradient(180deg, var(--bg), #0c1014);
-  color:var(--text);
-  font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,"Helvetica Neue",Arial;
   position:relative;
+  color-scheme: dark;
 }
 
-/* Marca de agua */
+/* ==== Marca de agua (detrás de todo) ==== */
 body::before{
   content:"";
   position:fixed; inset:0;
   background-image: var(--wm-url);
   background-repeat: no-repeat;
   background-size: var(--wm-size);
-  background-position: right 6vw top 6vh; /* desktop */
+  background-position: right 6vw top 6vh; /* desktop sugerido */
   opacity: var(--wm-opacity);
   filter: drop-shadow(0 0 22px rgba(44,200,189,.16));
   pointer-events:none;
@@ -54,51 +55,62 @@ body::before{
 
 ::selection{ background:rgba(44,200,189,.28); color:#0b0f12; }
 
+/* ==== Layout principal ==== */
 .wrap{ max-width:720px; margin:40px auto; padding:0 16px; position:relative; z-index:1; }
 .card{
   background:var(--card);
   border:1px solid var(--border);
   border-radius:16px;
   box-shadow:var(--shadow);
-  overflow:hidden; /* para que el hero siga el radio */
+  overflow:hidden;
 }
 
-/* === HERO (cabecero con imagen) === */
-.brand-header.hero{
-  padding:0;
-  border-bottom:1px solid var(--border);
-}
+/* ==== HERO (cabecero con imagen) ==== */
+.brand-header.hero{ padding:0; border-bottom:1px solid var(--border); }
 .hero-img{
   display:block;
   width:100%;
   height:auto;
   max-width:100%;
   image-rendering:auto;
-  /* Sutil refuerzo visual del blanco del logo con un fondo suave */
+  /* realce muy suave bajo el hero */
   background:
     radial-gradient(800px 300px at 50% 0%, rgba(44,200,189,.10), transparent 60%),
     linear-gradient(180deg, rgba(255,255,255,.02), rgba(0,0,0,0));
 }
 
-/* Contenido y formulario */
+/* ==== Contenido / formulario ==== */
 .content{ padding:20px; }
 
 label{ display:block; margin:.25rem 0 .35rem; }
-input[type="text"],input[type="password"],input[type="number"],input[type="date"]{
-  width:100%; padding:12px 14px; border-radius:12px;
+
+input[type="text"], input[type="password"], input[type="number"], input[type="date"]{
+  width:100%;
+  padding:12px 14px;
+  border-radius:12px;
   border:1px solid rgba(255,255,255,.12);
-  background:#0d1219; color:var(--text); font-size:1rem; outline:none;
+  background:#0d1219;
+  color:var(--text);
+  font-size:1rem;
+  outline:none;
   transition:border .15s ease, box-shadow .15s ease, background .15s ease;
 }
+
 input[type="number"]::-webkit-outer-spin-button,
 input[type="number"]::-webkit-inner-spin-button{ -webkit-appearance:none; margin:0; }
+
 input:focus-visible{
   border-color:var(--accent-700);
   box-shadow:0 0 0 3px var(--ring);
   background:#0c1117;
 }
 
-.row{ display:grid; grid-template-columns:1fr 1fr auto; gap:12px; align-items:end; }
+.row{
+  display:grid;
+  grid-template-columns:1fr 1fr auto;
+  gap:12px;
+  align-items:end;
+}
 @media (max-width:640px){
   .row{ grid-template-columns:1fr; }
 }
@@ -121,14 +133,19 @@ button:focus-visible{ outline:none; box-shadow:0 0 0 3px var(--ring), 0 6px 18px
 button[disabled]{ opacity:.6; cursor:not-allowed; box-shadow:none; }
 
 .actions{
-  display:flex; gap:8px; align-items:center; justify-content:space-between;
+  display:flex;
+  gap:8px;
+  align-items:center;
+  justify-content:space-between;
   margin-top:4px;
 }
 
+/* Mensajes */
 .muted{ color:var(--muted); }
 .ok{ color:var(--ok); }
 .err{ color:var(--danger); }
 
+/* ==== Tabla ==== */
 table{
   width:100%;
   border-collapse:collapse;
@@ -141,7 +158,8 @@ table{
 th,td{
   padding:12px;
   border-bottom:1px solid rgba(255,255,255,.06);
-  text-align:left; vertical-align:middle;
+  text-align:left;
+  vertical-align:middle;
 }
 th{
   font-weight:700;
@@ -151,22 +169,28 @@ th{
 tbody tr:hover td{ background:rgba(44,200,189,.05); }
 tr:last-child td{ border-bottom:none; }
 
+/* scroll horizontal de tabla en pantallas estrechas sin romper la maquetación */
+@media (max-width:480px){
+  table{ display:block; overflow-x:auto; white-space:nowrap; }
+}
+
+/* Utilidades */
 .center{ display:flex; justify-content:center; align-items:center; gap:8px; }
 .hide{ display:none !important; }
 .footer{ padding:0 20px 20px; color:var(--muted); }
 
-/* Modal */
+/* ==== Modal login ==== */
 .login-backdrop{
   position:fixed; inset:0;
   background:rgba(10,14,18,.65);
   backdrop-filter: blur(4px);
   display:flex; align-items:center; justify-content:center;
-  padding:16px; z-index:2;
+  padding:16px; z-index:2; /* sobre la marca de agua */
 }
 .login{ width:100%; max-width:420px; }
 .login .card{ border-color:rgba(44,200,189,.18); }
 
-/* Botón eliminar */
+/* Botón eliminar coherente con la paleta */
 .btn-small{ padding:8px 10px; font-size:.9rem; border-radius:10px; }
 .btn-del{
   background:#1a2027;
@@ -176,3 +200,9 @@ tr:last-child td{ border-bottom:none; }
 }
 .btn-del:hover{ filter:brightness(1.06); }
 .btn-del:focus-visible{ box-shadow:0 0 0 3px rgba(255,107,107,.35); }
+
+/* Reduce animaciones si el usuario lo prefiere */
+@media (prefers-reduced-motion: reduce){
+  button{ transition:none; }
+  .hero-img{ transition:none; }
+}
