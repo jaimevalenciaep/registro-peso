@@ -85,31 +85,33 @@
     </div>
   </div>
 
-  <!-- Modal de acceso -->
+  <!-- Modal de acceso (ahora con FORM para que Enter funcione) -->
   <div class="login-backdrop" id="loginModal" role="dialog" aria-modal="true" aria-labelledby="loginTitle">
     <div class="card login">
       <div class="content">
         <h2 id="loginTitle" style="margin-top:0">Accede a tu registro</h2>
         <p class="muted" style="margin-top:0">Introduce tu <strong>id de usuario</strong> y tu <strong>token</strong>.</p>
-        <div style="display:grid;gap:12px">
+
+        <!-- FORM en lugar de div -->
+        <form id="loginForm" style="display:grid;gap:12px">
           <div>
             <label for="userId">ID de usuario</label>
-            <input id="userId" type="text" placeholder="Ej: ana" autocomplete="username" />
+            <input id="userId" name="userId" type="text" placeholder="Ej: ana" autocomplete="username" required />
           </div>
           <div>
             <label for="token">Token</label>
-            <input id="token" type="password" placeholder="Tu token personal" autocomplete="current-password" />
+            <input id="token" name="token" type="password" placeholder="Tu token personal" autocomplete="current-password" required />
           </div>
-          <button id="loginBtn">Entrar</button>
+          <button id="loginBtn" type="submit">Entrar</button>
           <small class="muted">También puedes abrir la página con <code>?userId=ana&token=TU_TOKEN</code> para autocompletar.</small>
-        </div>
+        </form>
       </div>
     </div>
   </div>
 
   <script>
     // ======= 🔧 CONFIG =======
-    const APP_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzZ7uUeO41LObG2pvV0KPnc_PTwLsvg33QG0N8IWfbV8UZXYYEJ0JrFGLpTFFPi0K8u/exec"; // ← Pega aquí tu URL /exec
+    const APP_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzZ7uUeO41LObG2pvV0KPnc_PTwLsvg33QG0N8IWfbV8UZXYYEJ0JrFGLpTFFPi0K8u/exec"; // ← tu URL /exec
     const DATE_LOCALE = "es-ES"; // dd/mm/yyyy
     const TZ = "Europe/Madrid";
 
@@ -261,7 +263,9 @@
       renderToday();
       checkLogin();
 
-      el("loginBtn").addEventListener("click", () => {
+      // NUEVO: submit del formulario para que Enter funcione y el modal se cierre siempre
+      el("loginForm")?.addEventListener("submit", (e) => {
+        e.preventDefault();
         const userId = el("userId").value.trim();
         const token  = el("token").value.trim();
         if (!userId || !token) {
@@ -269,12 +273,13 @@
           return;
         }
         setCreds({userId, token});
-        show(el("loginModal"), false);
+        show(el("loginModal"), false);   // cierra el modal
         show(el("logoutBtn"), true);
         renderStatus("Sesión iniciada. Cargando histórico…", "muted");
         loadHistory();
       });
 
+      // Logout y registro de peso
       el("logoutBtn").addEventListener("click", () => {
         clearCreds();
         renderTable([]);
