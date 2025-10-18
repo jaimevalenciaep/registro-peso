@@ -1,4 +1,4 @@
-/* ===== JV Registro de Peso — styles.css (revisado) ===== */
+/* ===== JV Registro de Peso — styles.css (SIN marca de agua) ===== */
 :root{
   /* Paleta basada en tu logo */
   --bg:#0f1318;
@@ -13,11 +13,6 @@
 
   --border:rgba(255,255,255,.08);
   --shadow:0 12px 35px rgba(0,0,0,.45);
-
-  /* Marca de agua del fondo */
-  --wm-url: url("../img/logo-con-fondo.png");
-  --wm-size: min(64vw, 520px);
-  --wm-opacity: .08;
 }
 
 *{ box-sizing:border-box; }
@@ -33,24 +28,6 @@ body{
     linear-gradient(180deg, var(--bg), #0c1014);
   position:relative;
   color-scheme: dark;
-}
-
-/* ==== Marca de agua (detrás de todo) ==== */
-body::before{
-  content:"";
-  position:fixed; inset:0;
-  background-image: var(--wm-url);
-  background-repeat: no-repeat;
-  background-size: var(--wm-size);
-  background-position: right 6vw top 6vh; /* desktop sugerido */
-  opacity: var(--wm-opacity);
-  filter: drop-shadow(0 0 22px rgba(44,200,189,.16));
-  pointer-events:none;
-  z-index:0;
-}
-@media (max-width: 640px){
-  :root{ --wm-size: min(86vw, 380px); --wm-opacity: .07; }
-  body::before{ background-position: center 10vh; }
 }
 
 ::selection{ background:rgba(44,200,189,.28); color:#0b0f12; }
@@ -185,7 +162,7 @@ tr:last-child td{ border-bottom:none; }
   background:rgba(10,14,18,.65);
   backdrop-filter: blur(4px);
   display:flex; align-items:center; justify-content:center;
-  padding:16px; z-index:2; /* sobre la marca de agua */
+  padding:16px; z-index:2;
 }
 .login{ width:100%; max-width:420px; }
 .login .card{ border-color:rgba(44,200,189,.18); }
