@@ -5,28 +5,26 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Registro de Peso (kg)</title>
 
-  <!-- CSS externo (incluye marca de agua y paleta basada en tu logo) -->
+  <!-- CSS externo -->
   <link rel="stylesheet" href="./assets/css/styles.css">
 
   <!-- Favicon (evita 404 si no tienes uno) -->
   <link rel="icon" href="data:,">
 
-  <!-- Pre-carga de la imagen usada como marca de agua en el CSS -->
-  <link rel="preload" as="image" href="./assets/img/logo-sin-fondo.png" />
-
-  <!-- Opcional: hint de conexión hacia Apps Script -->
+  <!-- Pre-carga de la marca de agua (si la usas en el CSS) -->
+  <link rel="preload" as="image" href="./assets/img/logo-con-fondo.png" />
   <link rel="preconnect" href="https://script.google.com" crossorigin>
 </head>
 <body>
   <div class="wrap">
     <div class="card">
-      <!-- CABECERA CON TÍTULO TIPOGRÁFICO (texto fuera de la imagen) -->
+      <!-- CABECERA CON TÍTULO TIPOGRÁFICO -->
       <header class="brand-header">
         <h1 class="brand-title">
           <span class="brand-initials">JV</span>
           <span class="brand-title-text">Registro diario de peso</span>
         </h1>
-        <p class="muted">Introduce tu peso en <strong>kg</strong>. La fecha se guarda automáticamente (dd/mm/yyyy).</p>
+        <p class="muted">Introduce tu peso en <strong>kg</strong> y, si quieres, ajusta la <strong>fecha</strong>. El guardado usa dd/mm/yyyy.</p>
       </header>
 
       <div class="content">
@@ -37,6 +35,7 @@
           </div>
         </div>
 
+        <!-- Formulario de registro -->
         <div class="row" style="margin-top:14px">
           <div>
             <label for="peso">Peso (kg)</label>
@@ -51,7 +50,12 @@
               placeholder="Ej: 72.4"
               autocomplete="off"
             />
-            <small class="muted" id="pesoHelp">Usa punto o coma para decimales.</small>
+            <small class="muted">Usa punto o coma para decimales.</small>
+          </div>
+          <div>
+            <label for="fecha">Fecha</label>
+            <input id="fecha" type="date" />
+            <small class="muted">Opcional: para pesos de días pasados.</small>
           </div>
           <div>
             <button id="addBtn" type="button">Registrar</button>
@@ -78,7 +82,7 @@
     </div>
   </div>
 
-  <!-- Modal de acceso con FORM (soporta Enter) -->
+  <!-- Modal de acceso -->
   <div class="login-backdrop" id="loginModal" role="dialog" aria-modal="true" aria-labelledby="loginTitle">
     <div class="card login">
       <div class="content">
@@ -103,7 +107,7 @@
   <!-- ===================== JS ===================== -->
   <script>
     // ========= CONFIG =========
-    const APP_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxKdPLwPSupjMsZDh2r53_jHcZWWY1_FYDHWaAUrih1zYlOqTGvigSeZCB8YzwX_ciT/exec"; // ← pega aquí tu URL /exec vigente
+    const APP_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzTkWZZbMCF5YKN_Z1B_Pn90U2KZupT0a7te0Ph0JUkQOv6x3qr0EvjZz2ykMgWHwDR/exec"; // ← pega aquí tu URL /exec vigente
     const DATE_LOCALE = "es-ES";
     const TZ = "Europe/Madrid";
 
@@ -112,7 +116,19 @@
     const okURL = u => /^https?:\/\/.+\/exec(\b|$)/.test(u||"");
     const show = (node, v=true) => node && node.classList.toggle("hide", !v);
     const fmtDate = d => new Date(d).toLocaleDateString(DATE_LOCALE, {day:'2-digit',month:'2-digit',year:'numeric', timeZone:TZ});
+
     const normalize = v => { const n=Number(String(v||"").trim().replace(",", ".")); return Number.isFinite(n)?n:null; };
+
+    function pad2(n){ return String(n).padStart(2,"0"); }
+    function todayISO(){
+      const now = new Date();
+      return `${now.getFullYear()}-${pad2(now.getMonth()+1)}-${pad2(now.getDate())}`; // yyyy-mm-dd
+    }
+    function isoToDDMMYYYY(iso){ // yyyy-mm-dd -> dd/mm/yyyy
+      if(!iso) return null;
+      const [y,m,d] = iso.split("-");
+      return `${d}/${m}/${y}`;
+    }
 
     const setCreds = ({userId, token}) => { localStorage.setItem("userId", userId); localStorage.setItem("token", token); };
     const getCreds = () => ({ userId: localStorage.getItem("userId"), token: localStorage.getItem("token") });
@@ -121,7 +137,7 @@
     function renderToday(){ el("today").textContent = "Hoy: " + fmtDate(Date.now()); }
     function renderStatus(msg, cls="muted"){ const s=el("status"); s.textContent = msg; s.className = cls; }
 
-    // ========= Parse robusto (por si algún deployment devuelve data=...) =========
+    // ========= Parse robusto =========
     async function parseJSONResponse(res){
       const txt = await res.text();
       try { return JSON.parse(txt); } catch {}
@@ -142,9 +158,9 @@
     }
 
     // POST sin preflight (x-www-form-urlencoded)
-    async function apiAdd(userId, token, weight){
+    async function apiAdd(userId, token, weight, dateDDMMYYYY){
       if (!okURL(APP_SCRIPT_URL)) throw new Error("Configura APP_SCRIPT_URL (debe acabar en /exec).");
-      const body = new URLSearchParams({ data: JSON.stringify({ action:"add", userId, token, weight }) });
+      const body = new URLSearchParams({ data: JSON.stringify({ action:"add", userId, token, weight, date: dateDDMMYYYY }) });
       const res = await fetch(APP_SCRIPT_URL, {
         method:"POST",
         headers: { "Content-Type":"application/x-www-form-urlencoded;charset=UTF-8" },
@@ -153,9 +169,7 @@
       return parseJSONResponse(res);
     }
 
-    // ❌ Eliminar registro (por número de fila real en la hoja)
     async function apiDelete(userId, token, row){
-      if (!okURL(APP_SCRIPT_URL)) throw new Error("Configura APP_SCRIPT_URL (debe acabar en /exec).");
       const body = new URLSearchParams({ data: JSON.stringify({ action:"delete", userId, token, row }) });
       const res = await fetch(APP_SCRIPT_URL, {
         method:"POST",
@@ -197,13 +211,24 @@
     async function handleAdd(){
       const { userId, token } = getCreds();
       if (!userId || !token){ renderStatus("Primero inicia sesión.", "err"); showModal(); return; }
+
       const w = normalize(el("peso").value);
       if (w==null || w<20 || w>400){ renderStatus("Introduce un peso válido (20–400 kg).", "err"); el("peso").focus(); return; }
+
+      // Fecha: si el usuario no elige, usamos hoy; convertimos a dd/mm/yyyy
+      const iso = el("fecha").value || todayISO();
+      const dateStr = isoToDDMMYYYY(iso);
+
       el("addBtn").disabled = true; renderStatus("Guardando…");
       try{
-        const data = await apiAdd(userId, token, w);
-        if (data.ok){ el("peso").value=""; renderStatus("Registro guardado.", "ok"); await loadHistory(); }
-        else { renderStatus(data.error || "No se pudo guardar.", "err"); }
+        const data = await apiAdd(userId, token, w, dateStr);
+        if (data.ok){
+          el("peso").value="";
+          renderStatus("Registro guardado.", "ok");
+          await loadHistory();
+        } else {
+          renderStatus(data.error || "No se pudo guardar.", "err");
+        }
       }catch(e){ renderStatus(e.message || "Error de red/servidor.", "err"); }
       finally{ el("addBtn").disabled = false; }
     }
@@ -246,11 +271,19 @@
       else { showModal(); el("logoutBtn").classList.add("hide"); }
     }
 
-    // ========= Init / eventos =========
+    // ========= Init =========
     window.addEventListener("DOMContentLoaded", () => {
       renderToday();
       syncCredsFromQuery();
       updateAuthUI();
+
+      // Inicializa el selector de fecha con hoy y limita a hoy como máximo
+      const fecha = el("fecha");
+      if (fecha){
+        const iso = todayISO();
+        fecha.value = iso;
+        fecha.max = iso;        // impedir futuras
+      }
 
       el("loginForm")?.addEventListener("submit", (e) => {
         e.preventDefault();
