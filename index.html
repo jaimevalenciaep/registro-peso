@@ -3,6 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <link rel="icon" href="data:,">
   <title>Registro de Peso (kg)</title>
   <style>
     :root { --bg:#0b1020; --card:#141b34; --muted:#8ea0b6; --text:#eaf0ff; --accent:#7aa2ff; --danger:#ff6b6b; --ok:#47d16f; }
@@ -294,5 +295,53 @@
       });
     });
   </script>
+  <script>
+/* Parche: oculta el modal si hay credenciales guardadas, y también al iniciar sesión */
+(function(){
+  function hasCreds(){
+    try {
+      return localStorage.getItem('userId') && localStorage.getItem('token');
+    } catch { return false; }
+  }
+  function hideModal(){
+    var m = document.getElementById('loginModal');
+    if (!m) return;
+    m.classList.add('hide');
+    m.style.display = 'none';
+    m.setAttribute('aria-hidden', 'true');
+    var lo = document.getElementById('logoutBtn');
+    if (lo) lo.classList.remove('hide');
+  }
+
+  // 1) Al cargar la página
+  document.addEventListener('DOMContentLoaded', function(){
+    if (hasCreds()) hideModal();
+  });
+
+  // 2) Si el usuario envía el formulario de login
+  var lf = document.getElementById('loginForm');
+  if (lf) {
+    lf.addEventListener('submit', function(ev){
+      // OJO: tu script ya guarda en localStorage; aquí solo cerramos el modal por si acaso
+      setTimeout(function(){ if (hasCreds()) hideModal(); }, 0);
+    });
+  }
+
+  // 3) Si haces autologin con ?userId=&token= (tu script ya los guarda): cerrar también
+  (function syncFromQueryAndHide(){
+    try {
+      var url = new URL(location.href);
+      var u = url.searchParams.get('userId');
+      var t = url.searchParams.get('token');
+      if (u && t) {
+        localStorage.setItem('userId', u);
+        localStorage.setItem('token', t);
+        hideModal();
+      }
+    } catch {}
+  })();
+})();
+</script>
+
 </body>
 </html>
