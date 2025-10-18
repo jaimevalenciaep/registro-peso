@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Registro de Peso (kg)</title>
 
-  <!-- Color del navegador en móviles -->
   <meta name="theme-color" content="#2cc8bd" />
   <meta name="color-scheme" content="dark light" />
 
@@ -15,7 +14,7 @@
   <!-- Favicon “vacío” para evitar 404 -->
   <link rel="icon" href="data:," />
 
-  <!-- Preload imágenes usadas -->
+  <!-- Preload imagen del hero -->
   <link rel="preload" as="image" href="./assets/img/logo-texto-con-fondo.png" />
   <link rel="preconnect" href="https://script.google.com" crossorigin />
 </head>
@@ -98,15 +97,17 @@
       <div class="footer">
         <p class="muted" style="margin:0.75rem 0 0">Tus datos se envían de forma segura al registro de tu nutricionista.</p>
 
+        <!-- Franja de colaboración -->
         <div class="collab" aria-label="Colaboración">
-            <small>En colaboración con</small>
-            <img
-              src="./assets/img/MTXS.png" <!-- cambia la extensión si tu archivo no es .png -->
-              alt="MTXS"
-              class="collab-logo"
-              loading="lazy"
-              decoding="async"
-            />
+          <small>En colaboración con</small>
+          <img
+            src="./assets/img/MTXS.png"
+            alt="MTXS"
+            class="collab-logo"
+            loading="lazy"
+            decoding="async"
+          />
+        </div>
       </div>
     </div>
   </div>
@@ -318,10 +319,11 @@
         fecha.max = iso;
       }
 
-      // Atajos de teclado (Enter) en ambos campos
+      // Atajos Enter
       el("peso").addEventListener("keydown", e => { if (e.key === "Enter") handleAdd(); });
       el("fecha").addEventListener("keydown", e => { if (e.key === "Enter") handleAdd(); });
 
+      // Login form
       el("loginForm")?.addEventListener("submit", (e) => {
         e.preventDefault();
         const userId = el("userId").value.trim();
@@ -331,11 +333,10 @@
         renderStatus("Sesión iniciada. Cargando histórico…"); updateAuthUI();
       });
 
+      // Logout
       el("logoutBtn").addEventListener("click", () => {
         clearCreds(); renderTable([]); renderStatus("Sesión cerrada."); showModal(); el("logoutBtn").classList.add("hide");
       });
-
-      el("addBtn").addEventListener("click", handleAdd);
 
       if (!okURL(APP_SCRIPT_URL)){
         renderStatus("⚠️ APP_SCRIPT_URL no válida (debe terminar en /exec).", "err");
