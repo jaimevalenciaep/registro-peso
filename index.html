@@ -2,37 +2,46 @@
 <html lang="es">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Registro de Peso (kg)</title>
 
+  <!-- Color del navegador en móviles -->
+  <meta name="theme-color" content="#2cc8bd" />
+  <meta name="color-scheme" content="dark light" />
+
   <!-- CSS -->
-  <link rel="stylesheet" href="./assets/css/styles.css">
+  <link rel="stylesheet" href="./assets/css/styles.css" />
 
   <!-- Favicon “vacío” para evitar 404 -->
-  <link rel="icon" href="data:,">
+  <link rel="icon" href="data:," />
 
   <!-- Preload imágenes usadas -->
   <link rel="preload" as="image" href="./assets/img/logo-texto-con-fondo.png" />
   <link rel="preload" as="image" href="./assets/img/logo-con-fondo.png" />
-  <link rel="preconnect" href="https://script.google.com" crossorigin>
+  <link rel="preconnect" href="https://script.google.com" crossorigin />
 </head>
 <body>
+  <noscript style="display:block; padding:12px; text-align:center; color:#fff; background:#b00020;">
+    Activa JavaScript para usar el registro.
+  </noscript>
+
   <div class="wrap">
     <div class="card">
       <!-- HERO: cabecero con imagen -->
-      <header class="brand-header hero">
+      <header class="brand-header hero" role="banner">
         <img
           src="./assets/img/logo-texto-con-fondo.png?v=1"
           alt="Jaime Valencia — Entrenamiento Personal, Nutrición y Programación online"
           class="hero-img"
           loading="eager"
+          fetchpriority="high"
           decoding="async"
         />
       </header>
 
       <div class="content">
         <!-- Botón sesión a la derecha -->
-        <div class="actions">
+        <div class="actions" aria-label="Sesión">
           <div class="center" style="margin-left:auto;">
             <button id="logoutBtn" type="button" class="hide" title="Cerrar sesión">Cerrar sesión</button>
           </div>
@@ -52,16 +61,24 @@
               max="400"
               placeholder="Ej: 72.4"
               autocomplete="off"
+              autocapitalize="off"
+              required
+              aria-describedby="pesoHelp"
             />
-            <small class="muted">Usa punto o coma para decimales.</small>
+            <small class="muted" id="pesoHelp">Usa punto o coma para decimales.</small>
           </div>
           <div>
             <label for="fecha">Fecha</label>
-            <input id="fecha" type="date" />
-            <small class="muted">Por defecto: hoy.</small>
+            <input
+              id="fecha"
+              type="date"
+              required
+              aria-describedby="fechaHelp"
+            />
+            <small class="muted" id="fechaHelp">Por defecto: hoy (no admite futuras).</small>
           </div>
           <div>
-            <button id="addBtn" type="button">Registrar</button>
+            <button id="addBtn" type="button" aria-label="Registrar peso">Registrar</button>
           </div>
         </div>
 
@@ -70,9 +87,9 @@
         <table id="histTable" class="hide" aria-label="Histórico de pesos">
           <thead>
             <tr>
-              <th>Fecha (dd/mm/yyyy)</th>
-              <th>Peso (kg)</th>
-              <th>Acciones</th>
+              <th scope="col">Fecha (dd/mm/yyyy)</th>
+              <th scope="col">Peso (kg)</th>
+              <th scope="col">Acciones</th>
             </tr>
           </thead>
           <tbody id="histBody"></tbody>
@@ -94,7 +111,7 @@
         <form id="loginForm" style="display:grid;gap:12px" autocomplete="on">
           <div>
             <label for="userId">ID de usuario</label>
-            <input id="userId" name="userId" type="text" placeholder="Ej: ana" autocomplete="username" required />
+            <input id="userId" name="userId" type="text" placeholder="Ej: ana" autocomplete="username" autocapitalize="off" required />
           </div>
           <div>
             <label for="token">Token</label>
@@ -111,14 +128,13 @@
   <script>
     // ========= CONFIG =========
     const APP_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzTkWZZbMCF5YKN_Z1B_Pn90U2KZupT0a7te0Ph0JUkQOv6x3qr0EvjZz2ykMgWHwDR/exec"; // ← pega aquí tu URL /exec
-    const DATE_LOCALE = "es-ES";
-    const TZ = "Europe/Madrid";
 
     // ========= Utils =========
     const el = id => document.getElementById(id);
     const okURL = u => /^https?:\/\/.+\/exec(\b|$)/.test(u||"");
     const show = (node, v=true) => node && node.classList.toggle("hide", !v);
     const normalize = v => { const n=Number(String(v||"").trim().replace(",", ".")); return Number.isFinite(n)?n:null; };
+
     const pad2 = n => String(n).padStart(2,"0");
     const todayISO = () => {
       const now = new Date();
@@ -220,7 +236,7 @@
       try{
         const data = await apiAdd(userId, token, w, dateStr);
         if (data.ok){
-          el("peso").value="";
+          el("peso").value = "";
           renderStatus("Registro guardado.", "ok");
           await loadHistory();
         } else {
@@ -251,8 +267,20 @@
     });
 
     // Modal helpers
-    function hideModal(){ const m=el("loginModal"); if(!m) return; m.classList.add("hide"); m.style.display="none"; m.setAttribute("aria-hidden","true"); }
-    function showModal(){ const m=el("loginModal"); if(!m) return; m.classList.remove("hide"); m.style.display="flex"; m.removeAttribute("aria-hidden"); }
+    function hideModal(){
+      const m = el("loginModal");
+      if(!m) return;
+      m.classList.add("hide");
+      m.style.display="none";
+      m.setAttribute("aria-hidden","true");
+    }
+    function showModal(){
+      const m = el("loginModal");
+      if(!m) return;
+      m.classList.remove("hide");
+      m.style.display="flex";
+      m.removeAttribute("aria-hidden");
+    }
 
     function syncCredsFromQuery(){
       const url = new URL(location.href);
@@ -273,13 +301,17 @@
       syncCredsFromQuery();
       updateAuthUI();
 
-      // Inicializa selector de fecha (hoy y sin futuras)
+      // Inicializa fecha (hoy y sin futuras)
       const fecha = el("fecha");
       if (fecha){
         const iso = todayISO();
         fecha.value = iso;
         fecha.max = iso;
       }
+
+      // Atajos de teclado (Enter) en ambos campos
+      el("peso").addEventListener("keydown", e => { if (e.key === "Enter") handleAdd(); });
+      el("fecha").addEventListener("keydown", e => { if (e.key === "Enter") handleAdd(); });
 
       el("loginForm")?.addEventListener("submit", (e) => {
         e.preventDefault();
@@ -295,12 +327,16 @@
       });
 
       el("addBtn").addEventListener("click", handleAdd);
-      el("peso").addEventListener("keydown", e => { if (e.key==="Enter") handleAdd(); });
 
-      if (!okURL(APP_SCRIPT_URL)){ renderStatus("⚠️ APP_SCRIPT_URL no válida (debe terminar en /exec).", "err"); }
+      if (!okURL(APP_SCRIPT_URL)){
+        renderStatus("⚠️ APP_SCRIPT_URL no válida (debe terminar en /exec).", "err");
+      }
     });
 
-    window.addEventListener("error", ev => { console.error(ev.error || ev.message); renderStatus("Error: " + (ev.message || "consulta consola"), "err"); });
+    window.addEventListener("error", ev => {
+      console.error(ev.error || ev.message);
+      renderStatus("Error: " + (ev.message || "consulta consola"), "err");
+    });
   </script>
 </body>
 </html>
