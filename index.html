@@ -11,7 +11,7 @@
   <!-- Evita 404 de favicon si no tienes uno subido -->
   <link rel="icon" href="data:,">
 
-  <!-- (Opcional) Pre-carga del logo para que aparezca instantáneo -->
+  <!-- Pre-carga del logo para que aparezca instantáneo -->
   <link rel="preload" as="image" href="./assets/img/logo-principal-encabezado-web-invertido.png" />
 </head>
 <body>
@@ -97,7 +97,7 @@
   <script>
     // ========= CONFIG =========
     const APP_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxKdPLwPSupjMsZDh2r53_jHcZWWY1_FYDHWaAUrih1zYlOqTGvigSeZCB8YzwX_ciT/exec"; // ← pega aquí tu URL /exec vigente
-    const DATE_LOCALE = "es-ES"; 
+    const DATE_LOCALE = "es-ES";
     const TZ = "Europe/Madrid";
 
     // ========= Utils =========
@@ -146,7 +146,7 @@
       return parseJSONResponse(res);
     }
 
-    // ❌ Eliminar registro (por fila real de la hoja)
+    // ❌ Eliminar registro (por número de fila real en la hoja)
     async function apiDelete(userId, token, row){
       if (!okURL(APP_SCRIPT_URL)) throw new Error("Configura APP_SCRIPT_URL (debe acabar en /exec).");
       const body = new URLSearchParams({ data: JSON.stringify({ action:"delete", userId, token, row }) });
