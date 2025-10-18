@@ -1,19 +1,22 @@
 :root{
-  /* Paleta basada en tu logo JV (grafito + turquesa) */
-  --bg:#0f1318;           /* fondo general (muy oscuro, casi grafito) */
-  --card:#171b22;         /* tarjetas/paneles */
-  --text:#e9f2f2;         /* texto principal */
-  --muted:#9fb1bd;        /* texto secundario */
-  --accent:#2cc8bd;       /* turquesa principal del logo */
-  --accent-700:#1db2a7;   /* turquesa más oscuro (hover) */
-  --accent-900:#148e86;   /* turquesa profundo (active) */
-  --ring:rgba(44,200,189,.45); /* anillo de foco */
+  /* Paleta basada en tu logo (grafito + turquesa glow) */
+  --bg:#0f1318;
+  --card:#171b22;
+  --text:#e9f2f2;
+  --muted:#9fb1bd;
+  --accent:#2cc8bd;
+  --accent-700:#1db2a7;
+  --ring:rgba(44,200,189,.45);
   --danger:#ff6b6b;
   --ok:#47d16f;
 
-  /* sombras y bordes suaves */
   --border:rgba(255,255,255,.08);
   --shadow:0 12px 35px rgba(0,0,0,.45);
+
+  /* Marca de agua */
+  --wm-url: url("../img/logo-sin-fondo.png");   /* <-- ruta de la marca de agua */
+  --wm-size: min(72vw, 560px);
+  --wm-opacity: .07;                            /* más alto => más visible */
 }
 
 *{ box-sizing:border-box; }
@@ -27,12 +30,24 @@ body{
     linear-gradient(180deg, var(--bg), #0c1014);
   color:var(--text);
   font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,"Helvetica Neue",Arial;
+  position:relative;
 }
 
-/* Selección accesible en clave turquesa */
+/* Marca de agua global, detrás de todo el contenido */
+body::before{
+  content:"";
+  position:fixed;
+  inset:0;
+  background: center/var(--wm-size) no-repeat var(--wm-url);
+  opacity:var(--wm-opacity);
+  filter: drop-shadow(0 0 24px rgba(44,200,189,.18));
+  pointer-events:none;
+  z-index:0;
+}
+
 ::selection{ background:rgba(44,200,189,.28); color:#0b0f12; }
 
-.wrap{ max-width:720px; margin:40px auto; padding:0 16px; }
+.wrap{ max-width:720px; margin:40px auto; padding:0 16px; position:relative; z-index:1; }
 .card{
   background:var(--card);
   border:1px solid var(--border);
@@ -40,33 +55,34 @@ body{
   box-shadow:var(--shadow);
 }
 
-/* --- Header / Marca --- */
+/* --- Header / Título tipográfico --- */
 header{ padding:20px 20px 0; }
 header p{ margin:.25rem 0 1rem; color:var(--muted); }
 
-.brand-header{
-  position:relative;
-  padding:14px 20px 0;
-}
+.brand-header{ padding:14px 20px 0; }
 
-/* halo sutil detrás del logo (puedes quitar si no lo quieres) */
-.brand-header::after{
-  content:"";
-  position:absolute; inset:auto 20px 0 20px; top:8px;
-  height:60px; pointer-events:none;
-  background:radial-gradient(closest-side, rgba(44,200,189,.12), rgba(44,200,189,0));
-  filter:blur(8px);
-  border-radius:999px;
+/* Título con “JV” + texto, con glow turquesa sutil */
+.brand-title{
+  margin:0 0 .35rem 0;
+  display:flex;
+  flex-wrap:wrap;
+  align-items:baseline;
+  gap:10px 12px;
 }
-
-.brand-logo{
-  display:block;
-  width:100%;
-  height:auto;
-  max-width:100%;
-  object-fit:contain;
-  image-rendering:auto;
-  filter: drop-shadow(0 1px 0 rgba(255,255,255,0.05));
+.brand-initials{
+  font-weight:900;
+  font-size:clamp(28px, 7vw, 44px);
+  line-height:1;
+  letter-spacing:.02em;
+  color:var(--accent);
+  text-shadow:
+    0 0 14px rgba(44,200,189,.45),
+    0 0 3px rgba(44,200,189,.6);
+}
+.brand-title-text{
+  font-weight:700;
+  font-size:clamp(16px, 3.6vw, 22px);
+  color:#d7efed;
 }
 
 /* Accesibilidad */
@@ -149,14 +165,10 @@ th{
   color:#d9fbf7;
   background:linear-gradient(180deg, rgba(44,200,189,.14), rgba(44,200,189,.06));
 }
+tbody tr:hover td{ background:rgba(44,200,189,.05); }
 tr:last-child td{ border-bottom:none; }
 
-/* highlight de filas al pasar el ratón */
-tbody tr:hover td{
-  background:rgba(44,200,189,.05);
-}
-
-/* Acciones */
+/* Acciones / layout */
 .actions{
   display:flex;
   gap:8px;
@@ -176,11 +188,12 @@ tbody tr:hover td{
   backdrop-filter: blur(4px);
   display:flex; align-items:center; justify-content:center;
   padding:16px;
+  z-index:2; /* sobre la marca de agua */
 }
 .login{ width:100%; max-width:420px; }
 .login .card{ border-color:rgba(44,200,189,.18); }
 
-/* Botón eliminar coherente con la marca */
+/* Botón eliminar */
 .btn-small{ padding:8px 10px; font-size:.9rem; border-radius:10px; }
 .btn-del{
   background:#1a2027;
@@ -195,20 +208,15 @@ tbody tr:hover td{
 @media (max-width:480px){
   .wrap{ margin:24px auto; padding:0 12px; }
   .brand-header{ padding:10px 16px 0; }
+  .brand-title{ gap:8px 10px; }
+  .brand-title-text{ font-size:clamp(15px, 4.2vw, 20px); }
   .pill{ font-size:.85rem; }
   th,td{ padding:10px; }
 }
 
-/* Full-bleed opcional (logo a ancho completo del viewport):
-   añadir class="brand-header full-bleed" al <header> si lo quieres. */
+/* Full-bleed opcional para un header que ocupe todo el viewport */
 .full-bleed{
   margin-left: calc(50% - 50vw);
   margin-right: calc(50% - 50vw);
-}
-.full-bleed .brand-logo{
-  width:100vw;
-  max-width:100vw;
-  height:auto;
-  display:block;
 }
 .full-bleed + .content{ padding-top:12px; }
