@@ -5,37 +5,40 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Registro de Peso (kg)</title>
 
-  <!-- CSS externo -->
+  <!-- CSS -->
   <link rel="stylesheet" href="./assets/css/styles.css">
 
-  <!-- Favicon (evita 404 si no tienes uno) -->
+  <!-- Favicon “vacío” para evitar 404 -->
   <link rel="icon" href="data:,">
 
-  <!-- Pre-carga de la marca de agua (si la usas en el CSS) -->
+  <!-- Preload imágenes usadas -->
+  <link rel="preload" as="image" href="./assets/img/logo-texto-con-fondo.png" />
   <link rel="preload" as="image" href="./assets/img/logo-con-fondo.png" />
   <link rel="preconnect" href="https://script.google.com" crossorigin>
 </head>
 <body>
   <div class="wrap">
     <div class="card">
-      <!-- CABECERA CON TÍTULO TIPOGRÁFICO -->
-      <header class="brand-header">
-        <h1 class="brand-title">
-          <span class="brand-initials">JV</span>
-          <span class="brand-title-text">Registro diario de peso</span>
-        </h1>
-        <p class="muted">Introduce tu peso en <strong>kg</strong> y, si lo necesitas, ajusta la <strong>fecha</strong>. Se guarda en formato dd/mm/yyyy.</p>
+      <!-- HERO: cabecero con imagen -->
+      <header class="brand-header hero">
+        <img
+          src="./assets/img/logo-texto-con-fondo.png?v=1"
+          alt="Jaime Valencia — Entrenamiento Personal, Nutrición y Programación online"
+          class="hero-img"
+          loading="eager"
+          decoding="async"
+        />
       </header>
 
       <div class="content">
-        <!-- Solo el botón de sesión, alineado a la derecha -->
+        <!-- Botón sesión a la derecha -->
         <div class="actions">
           <div class="center" style="margin-left:auto;">
             <button id="logoutBtn" type="button" class="hide" title="Cerrar sesión">Cerrar sesión</button>
           </div>
         </div>
 
-        <!-- Formulario de registro -->
+        <!-- Formulario -->
         <div class="row" style="margin-top:14px">
           <div>
             <label for="peso">Peso (kg)</label>
@@ -107,7 +110,7 @@
   <!-- ===================== JS ===================== -->
   <script>
     // ========= CONFIG =========
-    const APP_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzTkWZZbMCF5YKN_Z1B_Pn90U2KZupT0a7te0Ph0JUkQOv6x3qr0EvjZz2ykMgWHwDR/exec"; // ← pega aquí tu URL /exec vigente
+    const APP_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzTkWZZbMCF5YKN_Z1B_Pn90U2KZupT0a7te0Ph0JUkQOv6x3qr0EvjZz2ykMgWHwDR/exec"; // ← pega aquí tu URL /exec
     const DATE_LOCALE = "es-ES";
     const TZ = "Europe/Madrid";
 
@@ -115,24 +118,23 @@
     const el = id => document.getElementById(id);
     const okURL = u => /^https?:\/\/.+\/exec(\b|$)/.test(u||"");
     const show = (node, v=true) => node && node.classList.toggle("hide", !v);
-
     const normalize = v => { const n=Number(String(v||"").trim().replace(",", ".")); return Number.isFinite(n)?n:null; };
-    function pad2(n){ return String(n).padStart(2,"0"); }
-    function todayISO(){
+    const pad2 = n => String(n).padStart(2,"0");
+    const todayISO = () => {
       const now = new Date();
-      return `${now.getFullYear()}-${pad2(now.getMonth()+1)}-${pad2(now.getDate())}`; // yyyy-mm-dd
-    }
-    function isoToDDMMYYYY(iso){ // yyyy-mm-dd -> dd/mm/yyyy
+      return `${now.getFullYear()}-${pad2(now.getMonth()+1)}-${pad2(now.getDate())}`;
+    };
+    const isoToDDMMYYYY = iso => {
       if(!iso) return null;
       const [y,m,d] = iso.split("-");
       return `${d}/${m}/${y}`;
-    }
+    };
 
     const setCreds = ({userId, token}) => { localStorage.setItem("userId", userId); localStorage.setItem("token", token); };
     const getCreds = () => ({ userId: localStorage.getItem("userId"), token: localStorage.getItem("token") });
     const clearCreds = () => { localStorage.removeItem("userId"); localStorage.removeItem("token"); };
 
-    function renderStatus(msg, cls="muted"){ const s=el("status"); s.textContent = msg; s.className = cls; }
+    const renderStatus = (msg, cls="muted") => { const s=el("status"); s.textContent = msg; s.className = cls; };
 
     // ========= Parse robusto =========
     async function parseJSONResponse(res){
@@ -154,7 +156,6 @@
       return parseJSONResponse(res);
     }
 
-    // POST sin preflight (x-www-form-urlencoded)
     async function apiAdd(userId, token, weight, dateDDMMYYYY){
       if (!okURL(APP_SCRIPT_URL)) throw new Error("Configura APP_SCRIPT_URL (debe acabar en /exec).");
       const body = new URLSearchParams({ data: JSON.stringify({ action:"add", userId, token, weight, date: dateDDMMYYYY }) });
@@ -212,7 +213,6 @@
       const w = normalize(el("peso").value);
       if (w==null || w<20 || w>400){ renderStatus("Introduce un peso válido (20–400 kg).", "err"); el("peso").focus(); return; }
 
-      // Fecha: usa la del selector (por defecto ya es hoy); convertimos a dd/mm/yyyy
       const iso = el("fecha").value || todayISO();
       const dateStr = isoToDDMMYYYY(iso);
 
@@ -273,12 +273,12 @@
       syncCredsFromQuery();
       updateAuthUI();
 
-      // Inicializa el selector de fecha con hoy y limita a hoy como máximo
+      // Inicializa selector de fecha (hoy y sin futuras)
       const fecha = el("fecha");
       if (fecha){
         const iso = todayISO();
         fecha.value = iso;
-        fecha.max = iso;        // impedir futuras
+        fecha.max = iso;
       }
 
       el("loginForm")?.addEventListener("submit", (e) => {
